@@ -1,0 +1,53 @@
+---
+/**
+ * La rotta ACCHIAPPATUTTO: disegna QUALUNQUE pagina del sito partendo dal suo
+ * percorso, leggendola dal database. È il cuore del "siti = dati": non c'è un
+ * file per pagina, c'è questa rotta sola e una riga nel database per ciascuna.
+ *
+ * `prerender = false` perché ogni pagina vive nel database e può cambiare a
+ * ogni pubblicazione. `/admin` e `/api/admin/*` hanno le loro rotte a parte,
+ * fuori da qui.
+ */
+export const prerender = false;
+
+import Pagina from "../components/Pagina.astro";
+import { leggiPubblicata, leggiPerComporre } from "../lib/store";
+import { inglese, paginaInglese } from "../lib/lingua";
+import { unisci } from "../lib/contenuti";
+
+const percorso = "/" + (Astro.params.percorso ?? "");
+
+/* Il visitatore vede solo il pubblicato. Chi COMPONE (sessione valida +
+   ?componi=1, deciso dal middleware) vede anche la bozza, così può lavorare
+   su una pagina non ancora online. */
+let dati: Record<string, any> | null = null;
+let componibile = false;
+
+if (Astro.locals.componi) {
+  const p = await leggiPerComporre(percorso);
+  if (p) { dati = p.dati; componibile = true; }
+} else {
+  const p = await leggiPubblicata(percorso);
+  if (p) dati = p.dati;
+}
+
+if (!dati) return Astro.rewrite("/404");
+
+/* In inglese i testi vengono da src/dati/en/pagine.mjs: titolo e SEO, e i
+   testi dei blocchi uno per uno (la disposizione resta quella del database).
+   Sui testi legali si avverte che fa fede la versione italiana. */
+const versioneEn = inglese(Astro) ? paginaInglese(percorso) : null;
+if (versioneEn) {
+  const { blocchi: blocchiEn, ...resto } = versioneEn;
+  dati = unisci(dati, resto) as Record<string, any>;
+  if (Array.isArray(dati.blocchi) && Array.isArray(blocchiEn)) {
+    dati.blocchi = dati.blocchi.map((b: any, i: number) => unisci(b, blocchiEn[i] ?? {}));
+  }
+  const b0 = dati.blocchi?.[0];
+  if (["/privacy", "/note-legali"].includes(percorso) && typeof b0?.dati?.html === "string") {
+    dati.blocchi[0] = { ...b0, dati: { ...b0.dati, html: `<p><em>This English translation is provided for convenience only; in case of discrepancy, the Italian version prevails.</em></p>${b0.dati.html}` } };
+  }
+}
+---
+
+<Pagina dati={dati} componibile={componibile} />

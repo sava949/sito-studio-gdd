@@ -1,0 +1,122 @@
+---
+/**
+ * La pagina di un'area di attività, disegnata a mano: il testo a sinistra e,
+ * a destra, un riquadro (le voci «In particolare», chi se ne occupa). In
+ * fondo, l'area precedente e la successiva. Vale per ogni sottopagina di
+ * /aree, anche quelle aggiunte dall'editor: una nuova parte da un testo da
+ * riempire. Testi modificabili dall'editor (src/lib/contenuti.ts).
+ */
+export const prerender = false;
+
+import Base from "../../layouts/Base.astro";
+import ContenutoEditor from "../../components/ContenutoEditor.astro";
+import { contenutoDi, elencoAree, marcatori, ancoraPersona } from "../../lib/contenuti";
+import { testi, traduttore } from "../../lib/lingua";
+
+const areaPredefinita = testi(Astro).area;
+const L = traduttore(Astro);
+
+const slug = String(Astro.params.slug ?? "");
+const percorso = `/aree/${slug}`;
+const primo = await contenutoDi(Astro, percorso, {});
+if (!primo.pagina) return Astro.rewrite("/404");
+const { c, componi } = await contenutoDi(Astro, percorso, areaPredefinita(slug, String((primo.pagina.dati as any)?.titolo ?? "")));
+const { t, r, l, v } = marcatori(componi);
+
+const aree = await elencoAree(Astro, areaPredefinita);
+const i = Math.max(0, aree.findIndex((a) => a.slug === slug));
+const prima = aree.length > 1 ? aree[(i - 1 + aree.length) % aree.length] : null;
+const dopo = aree.length > 1 ? aree[(i + 1) % aree.length] : null;
+---
+
+<Base titolo={c.titolo} descrizione={c.sintesi} componi={componi}>
+  <div class="pag">
+    <header class="pag-apertura">
+      <p class="pag-occhio" data-anima="sali"><a href="/aree">{L("Aree di attività", "Practice areas")}</a>&nbsp;/&nbsp;{String(i + 1).padStart(2, "0")}</p>
+      <h1 data-anima="sali" {...t("titolo")}>{c.titolo}</h1>
+      <p class="pag-lead" data-anima="sali" {...t("sintesi")}>{c.sintesi}</p>
+    </header>
+
+    <section class="area">
+      <div class="area__testo" data-riassumi={L("Continua a leggere", "Continue reading")} {...r("corpo")} set:html={c.corpo} />
+      <aside class="area__lato">
+        <div class="area__riquadro">
+          <p class="pag-etichetta" {...t("etichettaMaterie")}>{c.etichettaMaterie}</p>
+          <ul {...l("materie")}>{(c.materie ?? []).map((m, k) => <li {...v(k)} {...t(`materie.${k}`)}>{m}</li>)}</ul>
+          {(c.referenti?.length > 0 || componi) && (
+            <>
+              <p class="pag-etichetta area__chi" {...t("etichettaChi")}>{c.etichettaChi}</p>
+              <p class="area__nomi" {...l("referenti")}>
+                {(c.referenti ?? []).map((n, k) => (
+                  <span class="area__nome" {...v(k)}><a href={`/professionisti#${ancoraPersona(n)}`} {...t(`referenti.${k}`)}>{n}</a></span>
+                ))}
+              </p>
+            </>
+          )}
+          {c.domande && <a class="area__domande" href={c.domande} {...t("linkDomande")}>{c.linkDomande}</a>}
+        </div>
+      </aside>
+    </section>
+
+    {prima && dopo && (
+      <nav class="altre" aria-label={L("Le altre aree", "Other practice areas")}>
+        <a class="altre__voce" href={prima.href}><span>← {L("Area precedente", "Previous area")}</span>{prima.titolo}</a>
+        <a class="altre__voce altre__voce--dopo" href={dopo.href}><span>{L("Area successiva", "Next area")} →</span>{dopo.titolo}</a>
+      </nav>
+    )}
+  </div>
+  <ContenutoEditor c={c} componi={componi} />
+</Base>
+
+<style>
+  .pag-occhio a { color: inherit; text-decoration: none; }
+  .pag-occhio a:hover { color: #fff; }
+  .area { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(2.5rem, 7vw, 6rem); padding-block: clamp(3.5rem, 8vw, 6rem); border-top: 1px solid var(--linea); align-items: start; }
+  .area__testo :global(p) { font-size: 1.08rem; line-height: 1.85; color: var(--inchiostro-2); margin: 0 0 1.3em; }
+  .area__testo :global(p:first-child) { font-family: var(--serif); font-size: clamp(1.3rem, 2vw, 1.55rem); line-height: 1.55; color: #fff; }
+  .area__testo :global(h3) {
+    font-family: var(--sans); font-size: .72rem; letter-spacing: .26em; text-transform: uppercase; font-weight: 500;
+    color: var(--accento-viva); margin: 3rem 0 1rem; display: flex; align-items: center; gap: .9rem;
+  }
+  .area__testo :global(h3)::before { content: ""; width: 1.6rem; height: 1px; background: currentColor; }
+  .area__riquadro {
+    padding: 2.2rem; border: 1px solid var(--linea); background: linear-gradient(160deg, rgba(255, 255, 255, .035), rgba(0, 0, 0, .15));
+    box-shadow: 0 40px 80px -40px rgba(0, 0, 0, .8);
+  }
+  .area__riquadro ul { list-style: none; margin: 0 0 1.6rem; padding: 0; }
+  .area__riquadro li { font-size: .92rem; color: var(--inchiostro-2); padding: .55rem 0 .55rem 1.3rem; border-top: 1px solid var(--linea); position: relative; }
+  .area__riquadro li::before { content: "—"; position: absolute; left: 0; color: var(--accento-viva); }
+  .area__chi { margin-top: 1.6rem; }
+  .area__nomi { font-family: var(--serif); font-size: 1.2rem; line-height: 1.6; margin: 0; }
+  .area__nome { display: block; }
+  .area__nomi a { color: #fff; text-decoration: none; border-bottom: 1px solid var(--accento); }
+  .area__nomi a:hover { color: var(--accento-viva); }
+  .area__domande { display: block; margin-top: 1.8rem; padding-top: 1.4rem; border-top: 1px solid var(--linea); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: var(--inchiostro); text-decoration: none; }
+  .area__domande:hover { color: var(--accento-viva); }
+
+  .altre { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--linea); margin-bottom: 2rem; }
+  .altre__voce {
+    display: flex; flex-direction: column; gap: .7rem; padding: 2.4rem 0; text-decoration: none; color: #fff;
+    font-family: var(--serif); font-size: clamp(1.3rem, 2.4vw, 1.9rem); transition: color .3s;
+  }
+  .altre__voce span { font-family: var(--sans); font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--accento-viva); }
+  .altre__voce--dopo { text-align: right; border-left: 1px solid var(--linea); padding-left: 2rem; }
+  .altre__voce:hover { color: var(--accento-viva); }
+
+  /* Telefono: il testo riassunto, le voci come pastiglie. */
+  @media (max-width: 760px) {
+    .area { padding-block: 2.2rem; gap: 2.2rem; }
+    .area__testo :global(p:first-child) { font-size: 1.2rem; }
+    .area__testo :global(h3) { margin-top: 2rem; }
+    .area__riquadro { padding: 1.4rem; }
+    .area__riquadro ul { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+    .area__riquadro li { border: 1px solid var(--linea-forte); border-radius: 999px; padding: .35rem .8rem; font-size: .8rem; }
+    .area__riquadro li::before { content: none; }
+    .altre__voce { padding: 1.4rem 0; font-size: 1.2rem; }
+  }
+  @media (max-width: 860px) {
+    .area { grid-template-columns: 1fr; }
+    .altre { grid-template-columns: 1fr; }
+    .altre__voce--dopo { text-align: left; border-left: 0; border-top: 1px solid var(--linea); padding-left: 0; }
+  }
+</style>

@@ -1,0 +1,63 @@
+---
+/**
+ * Una pagina intera, resa dai suoi dati. È l'erede di PaginaComposta del
+ * motore d'origine, ma qui è LA rotta di tutte le pagine, non un caso
+ * speciale: nel nuovo modello ogni pagina è composta e vive nel database.
+ *
+ * `componibile` accende gli attributi che l'editor riconosce (anteprima);
+ * sul sito pubblico non ci sono.
+ */
+import Base from "../layouts/Base.astro";
+import Blocchi from "./Blocchi.astro";
+
+interface Props {
+  dati: Record<string, any>;
+  componibile?: boolean;
+}
+const { dati, componibile = false } = Astro.props;
+const modo = dati.modo ?? "foglio";
+const suFoglio = modo === "foglio";
+const aBlocchi = modo !== "testo";
+---
+
+<Base
+  titolo={dati.titolo ?? "Senza titolo"}
+  descrizione={dati.seo?.descrizione ?? ""}
+  immagineSocial={dati.seo?.immagineSocial ?? ""}
+  componi={componibile}
+>
+  {/* Fuori dal foglio libero il titolo sta sopra il contenuto. Sul foglio no:
+      lo mette Blocchi.astro dove chi compone l'ha messo. */}
+  {!suFoglio && (
+    <section class="sezione">
+      <div class="contenitore">
+        <div class="riga-misura testata-composta">
+          <h1 data-campo="titolo">{dati.titolo}</h1>
+          {dati.sottotitolo && <p class="presentazione" data-campo="sottotitolo">{dati.sottotitolo}</p>}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <section class="sezione">
+    {aBlocchi ? (
+      <Blocchi
+        blocchi={dati.blocchi}
+        componibile={componibile}
+        foglio={suFoglio}
+        altezzaFoglio={dati.altezzaFoglio}
+        testata={suFoglio ? {
+          titolo: dati.titolo,
+          sottotitolo: dati.sottotitolo,
+          x: dati.titoloX, y: dati.titoloY, w: dati.titoloW,
+          allinea: dati.titoloAllinea, colore: dati.titoloColore, font: dati.titoloFont,
+          dimensione: dati.titoloDimensione, anima: dati.titoloAnima,
+        } : null}
+      />
+    ) : (
+      <div class="contenitore">
+        <div class="prosa" set:html={dati.contenuto} />
+      </div>
+    )}
+  </section>
+</Base>

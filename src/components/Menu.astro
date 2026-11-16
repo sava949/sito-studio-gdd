@@ -1,0 +1,28 @@
+---
+/**
+ * Il menu del sito, costruito dall'ALBERO delle pagine (vedi store.menu()).
+ * Ricorsivo: una voce con figli mostra i suoi sotto-collegamenti. Niente è
+ * cablato — se non ci sono pagine «nel menu», non compare niente.
+ */
+import type { VoceMenu } from "../lib/store";
+
+interface Props {
+  voci: VoceMenu[];
+  attivo?: string;
+  livello?: number;
+}
+const { voci, attivo, livello = 0 } = Astro.props;
+---
+
+{voci.length > 0 && (
+  <ul class:list={["menu", livello > 0 && "menu--sotto"]}>
+    {voci.map((v) => (
+      <li>
+        <a href={v.percorso} aria-current={attivo === v.percorso ? "page" : undefined}>
+          {v.titolo}
+        </a>
+        {v.figli.length > 0 && <Astro.self voci={v.figli} attivo={attivo} livello={livello + 1} />}
+      </li>
+    ))}
+  </ul>
+)}

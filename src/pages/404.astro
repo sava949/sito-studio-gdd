@@ -1,0 +1,23 @@
+---
+export const prerender = false;
+import Base from "../layouts/Base.astro";
+import { traduttore } from "../lib/lingua";
+const L = traduttore(Astro);
+
+/* Uno status 404 vero, non un «soft 404» a 200: conta per i motori di
+   ricerca, ed è corretto anche quando ci si arriva per rewrite dalla rotta
+   acchiappatutto (una pagina non pubblicata o inesistente). */
+Astro.response.status = 404;
+---
+
+<Base titolo={L("Pagina non trovata", "Page not found")} nascosta={true}>
+  <section class="sezione">
+    <div class="contenitore">
+      <div class="riga-misura">
+        <h1>{L("Pagina non trovata", "Page not found")}</h1>
+        <p>{L("Questo indirizzo non corrisponde a nessuna pagina del sito.", "This address does not match any page on the site.")}</p>
+        <p><a href="/">{L("Torna alla home", "Back to the home page")}</a></p>
+      </div>
+    </div>
+  </section>
+</Base>

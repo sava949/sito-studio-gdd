@@ -1,0 +1,1009 @@
+/* Editor — foglio di stile del modulo generalista.
+   Volutamente indipendente dallo stile del sito pubblico: il pannello deve
+   somigliare a un programma, non alla home page. */
+
+:root {
+  --a-fondo: #ffffff;
+  --a-pannello: #f6f7f8;
+  --a-bordo: #dfe3e6;
+  --a-testo: #17222a;
+  --a-tenue: #5f6f7a;
+  --a-accento: #2f4b7c;
+  --a-pericolo: #9d2b2b;
+  --a-ok: #1f6b4a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  color: var(--a-testo);
+  background: var(--a-fondo);
+}
+
+button { font: inherit; cursor: pointer; }
+
+.telaio {
+  display: grid;
+  /* Due colonne: i servizi a sinistra, il foglio centrale (la mappa del sito o
+     una schermata) a destra. L'anteprima non ha una colonna sua: appare solo
+     in composizione, a schermo intero. */
+  grid-template-columns: 260px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+}
+
+/* ---- barra superiore ---- */
+.barra {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1.2rem;
+  border-bottom: 1px solid var(--a-bordo);
+  background: var(--a-fondo);
+}
+
+.barra__nome { font-weight: 600; }
+.barra__destra { display: flex; align-items: center; gap: 1rem; }
+
+#stato-salvataggio { color: var(--a-tenue); font-size: 0.85rem; }
+
+.segno-bozza {
+  font-size: 0.78rem; padding: 3px 8px; border-radius: 999px;
+  background: #fdf1d6; color: #7a5200; border: 1px solid #e8cf98;
+}
+
+/* ════════════════════ comporre sulla pagina, a schermo intero ═════════════
+ *
+ * Il pannello non viene smontato: viene richiuso. Le sezioni sono ancora
+ * tutte lì con i loro gestori, e uscendo si ritrova esattamente quello che
+ * c'era — mentre ricostruire il modulo a ogni entrata e uscita vorrebbe dire
+ * perdere ogni volta il punto in cui si era. */
+body.componendo .telaio { grid-template-columns: 1fr; }
+body.componendo .barra,
+body.componendo .menu,
+body.componendo .centro { display: none; }
+body.componendo #anteprima {
+  display: block;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  border: 0;
+  height: 100vh;
+}
+
+/* La tavolozza: sopra la pagina, semitrasparente, e si sposta da sola in
+   basso a destra se il puntatore le va sotto — una barra fissa che copre
+   proprio la sezione su cui si sta lavorando è peggio di nessuna barra. */
+.tavolozza {
+  position: fixed; top: 1rem; right: 1rem; z-index: 50;
+  width: 17rem; max-height: calc(100vh - 2rem); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 0.55rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  background: rgb(23 34 42 / 0.82);
+  backdrop-filter: blur(9px);
+  color: #eef2f5;
+  box-shadow: 0 10px 34px rgb(0 0 0 / 0.34);
+  font-size: 0.85rem;
+  transition: opacity 0.15s;
+}
+.tavolozza:hover { opacity: 1; }
+.tavolozza { opacity: 0.94; }
+
+/* Il ritorno alla mappa del sito: fisso in alto a sinistra mentre si compone,
+   sempre nello stesso punto, sopra l'anteprima. */
+.torna-mappa {
+  position: fixed; top: 1rem; left: 1rem; z-index: 60;
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  background: rgb(23 34 42 / 0.9); color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.18); border-radius: 8px;
+  padding: 0.5rem 0.85rem; font-size: 0.85rem; cursor: grab;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.28); backdrop-filter: blur(6px);
+}
+.torna-mappa:active { cursor: grabbing; }
+.torna-mappa:hover { background: var(--a-accento); border-color: transparent; }
+
+.tavolozza__testa {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: grab; user-select: none;
+}
+.tavolozza__testa:active { cursor: grabbing; }
+/* Mentre si trascina la tavolozza, l'iframe sotto non deve mangiarsi il
+   mouse: un iframe cattura gli eventi del puntatore, e il trascinamento
+   morirebbe appena lo si attraversa. */
+body.trascinando-tavolozza #anteprima { pointer-events: none; }
+.tavolozza__chiudi {
+  background: none; border: 0; color: #eef2f5; cursor: pointer;
+  font-size: 1rem; padding: 2px 6px; border-radius: 4px;
+}
+.tavolozza__chiudi:hover { background: rgb(255 255 255 / 0.16); }
+.tavolozza__aiuto { margin: 0; color: #b6c3cc; font-size: 0.78rem; line-height: 1.45; }
+.tavolozza__etichetta {
+  font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #93a3ae;
+}
+.tavolozza__griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.tavolozza__griglia button,
+.tavolozza__riga button,
+.tavolozza__fondo button {
+  background: rgb(255 255 255 / 0.10); border: 1px solid rgb(255 255 255 / 0.16);
+  color: #eef2f5; border-radius: 5px; padding: 5px 7px; cursor: pointer;
+  font-size: 0.78rem; text-align: left;
+}
+.tavolozza__griglia button:hover,
+.tavolozza__riga button:hover,
+.tavolozza__fondo button:hover { background: rgb(255 255 255 / 0.20); }
+.tavolozza__fondo button.principale,
+.tavolozza__riga button.pericolo:hover { border-color: transparent; }
+.tavolozza__fondo button.principale { background: var(--a-accento); }
+.tavolozza__riga button.pericolo:hover { background: var(--a-pericolo); }
+
+.tavolozza__scelta:not(:empty) {
+  display: flex; flex-direction: column; gap: 0.4rem;
+  padding-top: 0.55rem; border-top: 1px solid rgb(255 255 255 / 0.14);
+}
+.tavolozza__riga { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.tavolozza__tipo { flex: 1 1 100%; color: #cfd9e0; }
+
+/* I pallini della tavolozza dei colori. Il primo — «come il sito» — è vuoto
+   con una ×: non è un colore, è il ritorno alla regola. */
+.tavolozza__colori { display: flex; flex-wrap: wrap; gap: 5px; }
+.tavolozza__colori .colore {
+  width: 22px; height: 22px; border-radius: 50%; padding: 0;
+  border: 2px solid rgb(255 255 255 / 0.35); cursor: pointer;
+  background: transparent; color: #eef2f5; font-size: 0.8rem; line-height: 1;
+}
+.tavolozza__colori .colore:hover { border-color: rgb(255 255 255 / 0.7); }
+.tavolozza__colori .colore.attivo { border-color: #fff; box-shadow: 0 0 0 2px #2f4b7c; }
+
+/* La voce che riporta al sito, prima delle schede. */
+.voce-menu--sito { font-weight: 600; }
+
+/* Le modifiche in sospeso del sito: righe fitte, non paragrafi. */
+#sito-modifiche p { margin: 0 0 2px; }
+
+/* I tre allineamenti: pulsanti a parole, e quello in uso si vede. */
+.tavolozza__allinea button.attivo {
+  background: var(--a-accento); border-color: transparent;
+}
+/* La grandezza del testo: S / M / L / XL / XXL, quella scelta si vede. */
+.tavolozza__grandezza { display: flex; gap: 4px; }
+.tavolozza__grandezza button { flex: 1; text-align: center; }
+.tavolozza__grandezza button.attivo { background: var(--a-accento); border-color: transparent; }
+
+/* La riga della pagina: nel menu, il posto, l'eliminazione. */
+.tavolozza__pagina { align-items: center; font-size: 0.78rem; color: #cfd9e0; }
+.tavolozza__spunta { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.tavolozza__numero {
+  width: 3.4rem; padding: 3px 5px; font-size: 0.78rem;
+  background: rgb(255 255 255 / 0.10); color: #eef2f5;
+  border: 1px solid rgb(255 255 255 / 0.16); border-radius: 5px;
+}
+
+.tavolozza__font {
+  width: 100%; padding: 4px 6px; font-size: 0.78rem;
+  background: rgb(255 255 255 / 0.10); color: #eef2f5;
+  border: 1px solid rgb(255 255 255 / 0.16); border-radius: 5px;
+}
+/* Le voci della tendina stanno su fondo chiaro del sistema: chiare su
+   chiaro sparirebbero. */
+.tavolozza__font option { color: #17222a; }
+.tavolozza__fondo {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding-top: 0.55rem; border-top: 1px solid rgb(255 255 255 / 0.14);
+}
+.tavolozza__bozza { flex: 1 1 100%; color: #f0c675; font-size: 0.75rem; }
+
+/* Tornando al modulo, la sezione su cui si stava lavorando si fa ritrovare:
+   in una pagina di venti sezioni, senza, si riparte a cercare. */
+.blocco.appena-scelto { outline: 2px solid var(--a-accento); outline-offset: 2px; }
+
+#esci {
+  background: none;
+  border: 1px solid var(--a-bordo);
+  padding: 0.4rem 0.9rem;
+  border-radius: 4px;
+  color: var(--a-tenue);
+}
+
+/* ---- menu laterale ---- */
+.menu {
+  border-right: 1px solid var(--a-bordo);
+  background: var(--a-pannello);
+  padding: 0.8rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.voce-menu {
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: 5px;
+  color: var(--a-testo);
+}
+
+.voce-menu:hover { background: #e9ecef; }
+.voce-menu.attiva { background: var(--a-accento); color: #fff; }
+
+/* ---- colonna centrale ---- */
+.centro { overflow-y: auto; padding: 1.4rem 1.8rem 4rem; }
+
+.intestazione-schermata {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 0.4rem;
+}
+
+#titolo-schermata { font-size: 1.4rem; margin: 0; font-weight: 600; }
+#descrizione-schermata { color: var(--a-tenue); margin: 0.3rem 0 1.6rem; max-width: 46ch; }
+
+#azioni { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+#azioni button {
+  border: 1px solid var(--a-bordo);
+  background: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+}
+
+#azioni .principale { background: var(--a-accento); border-color: var(--a-accento); color: #fff; }
+#azioni .principale:disabled { background: #c6ccd2; border-color: #c6ccd2; cursor: default; }
+#azioni .pericolo { color: var(--a-pericolo); border-color: #e4c9c9; }
+
+/* ---- campi ---- */
+.modulo { display: flex; flex-direction: column; gap: 1.5rem; max-width: 42rem; }
+
+.campo { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.etichetta { font-weight: 600; font-size: 0.92rem; display: flex; align-items: baseline; gap: 0.6rem; }
+.sotto-etichetta { font-size: 0.82rem; color: var(--a-tenue); margin-top: 0.5rem; }
+
+.obbligatorio { font-weight: 400; font-size: 0.75rem; color: var(--a-tenue); }
+
+.aiuto { margin: 0 0 0.15rem; font-size: 0.85rem; color: var(--a-tenue); }
+
+input[type="text"], input[type="number"], input[type="date"], textarea, select {
+  font: inherit;
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--a-bordo);
+  border-radius: 5px;
+  background: #fff;
+  color: inherit;
+}
+
+input:focus, textarea:focus, select:focus, .ricco:focus {
+  outline: 2px solid var(--a-accento);
+  outline-offset: 1px;
+  border-color: var(--a-accento);
+}
+
+textarea { resize: vertical; line-height: 1.5; }
+
+.contatore { align-self: flex-end; font-size: 0.78rem; color: var(--a-tenue); }
+.contatore--limite { color: var(--a-pericolo); font-weight: 600; }
+
+.campo--interruttore { flex-direction: column; }
+.interruttore { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; font-size: 0.92rem; }
+.interruttore input { width: 1.1rem; height: 1.1rem; }
+
+/* ---- testo ricco ---- */
+.campo-ricco { border: 1px solid var(--a-bordo); border-radius: 5px; overflow: hidden; background: #fff; }
+
+.barra-strumenti {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 0.35rem;
+  border-bottom: 1px solid var(--a-bordo);
+  background: var(--a-pannello);
+}
+
+.strumento {
+  border: 0;
+  background: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--a-tenue);
+}
+
+.strumento:hover { background: #e3e7ea; color: var(--a-testo); }
+
+.ricco { min-height: 11rem; padding: 0.8rem; line-height: 1.6; }
+.ricco:focus { outline-offset: -2px; }
+.ricco h3 { font-size: 1.05rem; margin: 1.2em 0 0.4em; }
+.ricco p { margin: 0 0 0.9em; }
+.ricco ul { padding-left: 1.3rem; }
+
+/* ---- le fotografie dentro il testo ----
+   Queste quattro regole sono le stesse di `.prosa img--*` in global.css, ed è
+   voluto: chi compone deve vedere qui esattamente quello che verrà fuori là.
+   Se un giorno divergono, il pannello mente — e mente in modo credibile. */
+.ricco { display: flow-root; }          /* contiene le immagini a lato */
+.ricco img { max-width: 100%; height: auto; border-radius: 3px; cursor: pointer; }
+.ricco img.img--sinistra { float: left;  width: 42%; margin: .3rem 1.1rem .8rem 0; }
+.ricco img.img--destra   { float: right; width: 42%; margin: .3rem 0 .8rem 1.1rem; }
+.ricco img.img--centro   { display: block; width: 65%; margin: 1.2rem auto; }
+.ricco img.img--piena    { display: block; width: 100%; margin: 1.2rem 0; }
+.ricco img.scelta { outline: 2px solid var(--a-accento); outline-offset: 2px; }
+
+/* La barretta che compare sopra la fotografia scelta. Sta dentro il riquadro
+   del campo, che per questo diventa il riferimento delle coordinate. */
+.campo-ricco { position: relative; }
+.barra-immagine {
+  position: absolute; z-index: 5; display: none; gap: 2px;
+  background: var(--a-testo); border-radius: 5px; padding: 3px;
+  box-shadow: 0 3px 10px rgb(0 0 0 / 0.25);
+}
+.barra-immagine.visibile { display: flex; }
+.barra-immagine button {
+  background: none; border: 0; color: #fff; cursor: pointer;
+  font-size: 0.95rem; line-height: 1; padding: 5px 7px; border-radius: 3px;
+}
+.barra-immagine button:hover { background: rgb(255 255 255 / 0.18); }
+.barra-immagine button.pericolo:hover { background: var(--a-pericolo); }
+
+/* ---- immagine ---- */
+.campo-immagine { border: 1px solid var(--a-bordo); border-radius: 5px; padding: 0.8rem; background: #fff; }
+.anteprima-immagine { background: var(--a-pannello); border-radius: 4px; padding: 0.6rem; text-align: center; }
+.anteprima-immagine img { max-height: 180px; max-width: 100%; border-radius: 3px; }
+.anteprima-immagine .vuoto { color: var(--a-tenue); font-size: 0.85rem; }
+.campo-immagine__comandi { display: flex; align-items: center; gap: 0.8rem; margin: 0.7rem 0; flex-wrap: wrap; }
+.collegamento-azione { background: none; border: 0; color: var(--a-pericolo); text-decoration: underline; padding: 0; }
+
+/* L'indirizzo della pagina, sotto il suo titolo: una pastiglia cliccabile che
+   la apre in un'altra scheda. Al posto suo c'era la descrizione della
+   sezione Pagine — un cartello generico sotto ogni singola pagina. */
+.collegamento-pagina {
+  display: inline-block;
+  font-size: 0.82rem;
+  color: var(--a-accento);
+  text-decoration: none;
+  border: 1px solid var(--a-bordo);
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: var(--a-fondo);
+}
+.collegamento-pagina:hover { border-color: var(--a-accento); }
+
+/* ---- gruppo e lista ---- */
+.campo--gruppo { border: 1px solid var(--a-bordo); border-radius: 5px; padding: 1rem; }
+.campo--gruppo legend { font-weight: 600; padding: 0 0.4rem; }
+.gruppo { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.lista { display: flex; flex-direction: column; gap: 0.6rem; }
+.lista__riga { border: 1px solid var(--a-bordo); border-radius: 5px; overflow: hidden; }
+.lista__intestazione {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 0.7rem; background: var(--a-pannello); border-bottom: 1px solid var(--a-bordo);
+}
+.lista__titolo { font-weight: 600; font-size: 0.9rem; }
+.lista__azioni { display: flex; gap: 2px; }
+.lista__azioni button { border: 0; background: none; padding: 0.2rem 0.5rem; border-radius: 4px; color: var(--a-tenue); }
+.lista__azioni button:hover { background: #dde2e6; }
+.lista__azioni .pericolo { color: var(--a-pericolo); }
+.lista__corpo { padding: 0.9rem; display: flex; flex-direction: column; gap: 1rem; }
+
+.aggiungi {
+  align-self: flex-start;
+  border: 1px dashed var(--a-bordo);
+  background: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  color: var(--a-tenue);
+}
+.aggiungi:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- elenco voci ---- */
+.elenco { display: flex; flex-direction: column; border-top: 1px solid var(--a-bordo); max-width: 42rem; }
+.riga-elenco {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+  text-align: left; background: none; border: 0; border-bottom: 1px solid var(--a-bordo);
+  padding: 0.9rem 0.3rem;
+}
+.riga-elenco:hover { background: var(--a-pannello); }
+.riga-elenco__titolo { font-weight: 500; }
+.riga-elenco__meta { font-size: 0.82rem; color: var(--a-tenue); flex-shrink: 0; }
+.vuoto-elenco { color: var(--a-tenue); padding: 1.5rem 0; }
+
+/* ---- blocchi: la pagina composta a sezioni ---- */
+/* Ogni sezione è un riquadro con la sua testata: si vede dove comincia e
+   dove finisce, che è la cosa che manca di più quando si compone una pagina
+   lunga e si perde il filo di cosa si sta modificando. */
+/* LA GRIGLIA: dodici colonne, come sul sito. Le sezioni si mettono una a
+   fianco all'altra finché la riga si riempie, e poi vanno a capo da sole.
+   Le colonne qui e quelle di `.griglia-blocchi` in global.css devono restare
+   dodici tutte e due: è la stessa griglia detta due volte, e se divergono il
+   pannello mostra una pagina che il sito non farà. */
+.blocchi.griglia {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+/* `min-width: 0` non è pignoleria: senza, un titolo lungo allarga la sua
+   colonna oltre la quota e sfonda la riga. */
+.blocchi.griglia > .blocco { grid-column: span var(--span, 12); min-width: 0; }
+/* Quello che non è una sezione occupa comunque tutta la riga. */
+.blocchi.griglia > .vuoto-elenco,
+.blocchi.griglia > .aggiungi-blocco,
+.blocchi.griglia > .blocco--ignoto { grid-column: 1 / -1; }
+
+/* Le linee dipinte dietro le sezioni NON ci sono più, e il perché va tenuto:
+   erano un assoluto steso su tutto il campo, e un assoluto dipinge sopra
+   qualunque contenuto non posizionato — i pulsanti «Aggiungi una sezione» e
+   i testi d'aiuto finivano affettati dalle strisce. Le schede si salvavano
+   solo perché hanno un loro z-index. */
+.blocchi.misurando { user-select: none; }
+
+.blocco {
+  position: relative;
+  z-index: 1;
+  border: 1px solid var(--a-bordo);
+  border-radius: 5px;
+  background: var(--a-fondo);
+  overflow: hidden;
+}
+
+/* Il bordo destro che si trascina per cambiare la larghezza. Sta DENTRO il
+   riquadro e non a cavallo del bordo: sporgendo, finirebbe sopra la sezione
+   accanto e si prenderebbe i suoi clic. */
+.blocco__bordo {
+  position: absolute; top: 0; right: 0; width: 8px; height: 100%;
+  cursor: col-resize; z-index: 2;
+}
+.blocco__bordo::before {
+  content: ""; position: absolute; top: 50%; right: 2px;
+  width: 3px; height: 28px; margin-top: -14px; border-radius: 2px;
+  background: var(--a-bordo);
+}
+.blocco__bordo:hover::before { background: var(--a-accento); }
+/* Il numero di colonne mentre lo si trascina: senza, si tira alla cieca. */
+.blocco[data-larghezza]::after {
+  content: attr(data-larghezza);
+  position: absolute; top: 6px; right: 14px; z-index: 3;
+  background: var(--a-testo); color: #fff;
+  font-size: 0.75rem; padding: 2px 6px; border-radius: 3px;
+}
+.blocco__larghezza {
+  font-size: 0.78rem; padding: 2px 4px; max-width: 9.5rem;
+  border: 1px solid var(--a-bordo); border-radius: 3px; background: #fff;
+  color: var(--a-tenue);
+}
+.blocco__intestazione {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--a-pannello);
+  border-bottom: 1px solid var(--a-bordo);
+}
+.blocco__tipo {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--a-tenue);
+  flex: 1;
+}
+
+/* La maniglia del trascinamento. Sta a sinistra di tutto e ha il cursore che
+   dice cosa fa: è l'unico punto da cui si può prendere il riquadro, e deve
+   vedersi che è quello. */
+.blocco__maniglia {
+  cursor: grab;
+  user-select: none;
+  color: var(--a-tenue);
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
+}
+.blocco__maniglia:hover { background: var(--a-bordo); color: var(--a-testo); }
+.blocco__maniglia:active { cursor: grabbing; }
+
+/* Il riquadro mentre viaggia: si smorza, così si vede che è «staccato». */
+.blocco.in-viaggio { opacity: 0.4; }
+
+/* Dove atterrerà: una riga spessa sul bordo che sta per riceverlo. Senza,
+   si trascina alla cieca e si scopre dov'è finito solo dopo aver lasciato. */
+.blocco.bersaglio-sopra { box-shadow: 0 -3px 0 0 var(--a-accento); }
+.blocco.bersaglio-sotto { box-shadow: 0 3px 0 0 var(--a-accento); }
+.blocco__corpo { padding: 0.9rem 0.75rem 0.2rem; }
+/* L'ultimo campo di un blocco non deve staccare come se ce ne fosse un altro. */
+.blocco__corpo > .campo:last-child { margin-bottom: 0.7rem; }
+
+/* Un tipo che il catalogo non conosce più: si mostra spento invece di
+   sparire, o si perderebbe del contenuto senza dirlo a nessuno. */
+.blocco--ignoto {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0.7rem 0.75rem;
+  color: var(--a-pericolo); background: #fdf4f4;
+}
+
+/* Il menu per aggiungere: i tipi in chiaro, non dentro una tendina. Con otto
+   voci una tendina nasconde le possibilità proprio a chi non sa ancora cosa
+   può fare. */
+.aggiungi-blocco {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  padding: 0.7rem; margin-top: 0.2rem;
+  border: 1px dashed var(--a-bordo); border-radius: 5px;
+  background: var(--a-pannello);
+}
+.aggiungi-blocco__etichetta {
+  font-size: 0.85rem; color: var(--a-tenue); margin-right: 0.3rem;
+}
+.aggiungi-blocco button {
+  padding: 0.35rem 0.7rem; font-size: 0.85rem;
+  border: 1px solid var(--a-bordo); border-radius: 4px;
+  background: var(--a-fondo); color: var(--a-testo);
+}
+.aggiungi-blocco button:hover { border-color: var(--a-accento); color: var(--a-accento); }
+
+/* ---- versioni precedenti ---- */
+/* Una riga per versione: quando, cosa cambia, e il pulsante per riportarla.
+   Il «cosa cambia» è ciò che rende l'elenco utilizzabile: senza, si
+   sceglierebbe una data a caso sperando che sia quella giusta. */
+.riga-versione {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--a-bordo);
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  background: var(--a-fondo);
+}
+.riga-versione strong { display: block; font-weight: 600; }
+.riga-versione button { white-space: nowrap; }
+.riga-versione button:disabled { opacity: 0.45; cursor: default; }
+
+/* ---- anteprima ---- */
+/* L'anteprima non c'è nella home: compare solo in composizione (a schermo
+   intero, vedi body.componendo #anteprima). */
+#anteprima { display: none; border: 0; width: 100%; height: 100%; background: #fff; }
+
+/* ---- avvisi ---- */
+.avviso {
+  position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%) translateY(1rem);
+  background: var(--a-testo); color: #fff; padding: 0.7rem 1.2rem; border-radius: 6px;
+  font-size: 0.9rem; opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+  max-width: 90vw; z-index: 20;
+}
+.avviso.visibile { opacity: 1; transform: translateX(-50%) translateY(0); }
+.avviso--errore { background: var(--a-pericolo); }
+/* Il pulsante «Annulla» dentro l'avviso: la barra non cattura il mouse
+   (pointer-events:none), quindi lo riattiva solo lui. */
+.avviso__azione {
+  margin-left: 0.9rem; pointer-events: auto; cursor: pointer;
+  background: rgb(255 255 255 / 0.18); border: 1px solid rgb(255 255 255 / 0.4);
+  color: #fff; border-radius: 5px; padding: 0.25rem 0.7rem; font: inherit; font-size: 0.85rem;
+}
+.avviso__azione:hover { background: rgb(255 255 255 / 0.3); }
+
+@media (prefers-reduced-motion: reduce) { .avviso { transition: none; } }
+
+/* La finestra dello storico: un velo sopra tutto, col riquadro al centro.
+   Vive nel documento del pannello, quindi la si stila qui. */
+.cronologia-velo {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgb(0 0 0 / 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.cronologia {
+  width: min(30rem, 100%); max-height: 80vh; overflow-y: auto;
+  background: #17222a; color: #eef2f5;
+  border: 1px solid rgb(255 255 255 / 0.16); border-radius: 10px;
+  padding: 1rem 1.15rem;
+  box-shadow: 0 14px 40px rgb(0 0 0 / 0.5);
+}
+.cronologia h3 { margin: 0 0 0.7rem; font-size: 1rem; }
+.cronologia__vuoto { color: #b6c3cc; font-size: 0.85rem; line-height: 1.5; }
+.cronologia__riga {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.7rem;
+  padding: 0.5rem 0; border-top: 1px solid rgb(255 255 255 / 0.10);
+  font-size: 0.85rem;
+}
+.cronologia__riga button, .cronologia__chiudi {
+  background: rgb(255 255 255 / 0.10); border: 1px solid rgb(255 255 255 / 0.18);
+  color: #eef2f5; border-radius: 5px; padding: 5px 10px; cursor: pointer;
+  font-size: 0.8rem; white-space: nowrap;
+}
+.cronologia__riga button:hover { background: var(--a-accento); border-color: transparent; }
+.cronologia__chiudi { margin-top: 0.9rem; }
+.tavolozza__cronologia {
+  align-self: flex-start;
+  background: none !important; border: 0 !important;
+  color: #9fc0e6 !important; padding: 2px 0 !important;
+  text-decoration: underline; cursor: pointer; font-size: 0.8rem;
+}
+
+/* ---- schermi stretti ---- */
+/* Solo FUORI dalla composizione (il vecchio telaio a schede): mentre si
+   compone, l'anteprima È il sito, e nasconderla vorrebbe dire non vedere
+   niente proprio dove serve di più — sul telefono. */
+@media (max-width: 1100px) {
+  body:not(.componendo) .telaio { grid-template-columns: 200px minmax(0, 1fr); }
+  body:not(.componendo) #anteprima { display: none; }
+}
+
+@media (max-width: 700px) {
+  body:not(.componendo) .telaio {
+    grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; height: auto;
+  }
+  body:not(.componendo) .menu {
+    flex-direction: row; overflow-x: auto;
+    border-right: 0; border-bottom: 1px solid var(--a-bordo);
+  }
+  .voce-menu { white-space: nowrap; }
+  .centro { padding: 1.2rem; }
+  .intestazione-schermata { flex-direction: column; }
+
+  /* La tavolozza diventa un cassetto in basso: piena larghezza, a portata di
+     pollice, e non copre più mezza pagina come farebbe il riquadro flottante
+     su uno schermo stretto. I comandi si fanno più alti — un bersaglio da
+     dito, non da mouse. */
+  .tavolozza {
+    top: auto; right: 0; left: 0; bottom: 0;
+    width: auto; max-width: none; border-radius: 14px 14px 0 0;
+    max-height: 62vh; opacity: 1;
+  }
+  .tavolozza__griglia button,
+  .tavolozza__riga button,
+  .tavolozza__fondo button { padding: 9px 10px; font-size: 0.85rem; }
+  .tavolozza__fondo { position: sticky; bottom: 0; background: inherit; padding-top: 0.4rem; }
+}
+
+/* ═══════════════════════ i servizi (colonna di sinistra) ═══════════════════════
+ *
+ * A sinistra ora ci sono i SERVIZI del sito, non più l'elenco delle pagine:
+ * «Pagine» riporta alla mappa (il foglio centrale), gli altri aprono le loro
+ * schermate. Qui in futuro si aggiungono le altre voci. */
+.servizi__testa {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--a-tenue); padding: 0.2rem 0.5rem 0.7rem;
+}
+.servizi__voce {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; text-align: left; background: none; border: 0; border-radius: 7px;
+  padding: 0.6rem 0.7rem; color: var(--a-testo); font-size: 0.95rem; cursor: pointer;
+}
+.servizi__voce:hover { background: #e9ecef; }
+.servizi__voce.attivo { background: var(--a-accento); color: #fff; }
+.servizi__conteggio {
+  min-width: 1.3rem; padding: 0 0.4rem; border-radius: 999px;
+  background: var(--a-pericolo); color: #fff; font-size: 0.72rem; text-align: center;
+}
+.servizi__voce.attivo .servizi__conteggio { background: #fff; color: var(--a-pericolo); }
+
+/* ══════════════ la mappa del sito: un GRAFO ad albero (org-chart) ══════════════
+ *
+ * Dall'alto in basso: le pagine radice in cima, i figli scendono sotto il
+ * genitore uniti da linee. La struttura è `ul.org > li (nodo + ul figli)`; i
+ * connettori (bus orizzontale + calate verticali) li disegnano gli
+ * pseudo-elementi, come nel classico organigramma in CSS. */
+.mappa__barra { margin-bottom: 1rem; }
+.mappa__nuova {
+  background: var(--a-accento); color: #fff; border: 0; border-radius: 7px;
+  padding: 0.55rem 1rem; font-size: 0.9rem; cursor: pointer;
+}
+.mappa__nuova:hover { filter: brightness(1.07); }
+.mappa__vuoto { color: var(--a-tenue); font-style: italic; }
+
+/* Il grafo scorre in orizzontale se l'albero è largo, senza rompere la pagina. */
+/* La tela del grafo: un fondo a puntini leggeri, come un editor a nodi. */
+.grafo {
+  overflow-x: auto; padding: 1.6rem 1rem 2.4rem;
+  background-color: #fbfcfd;
+  background-image: radial-gradient(#d7dee7 1.4px, transparent 1.4px);
+  background-size: 22px 22px;
+  border: 1px solid var(--a-bordo); border-radius: 12px;
+}
+.org, .org ul { list-style: none; margin: 0; padding: 0; }
+/* le radici in fila in cima */
+.org { display: flex; justify-content: flex-start; gap: 2rem; }
+/* i figli: una fila centrata sotto il genitore */
+.org ul { display: flex; justify-content: center; padding-top: 1.5rem; }
+.org li {
+  position: relative; padding: 1.5rem 0.7rem 0;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* bus orizzontale che unisce i fratelli */
+.org li::before, .org li::after {
+  content: ""; position: absolute; top: 0; height: 1.5rem; width: 50%;
+  border-top: 2px solid var(--a-linea-grafo, #9fb2d0);
+}
+.org li::before { right: 50%; }
+.org li::after { left: 50%; border-left: 2px solid var(--a-linea-grafo, #9fb2d0); }
+/* figlio unico: niente bus, e nessuno spazio in più — così la calata del
+   genitore (`.org ul::before`) arriva DRITTA fino alla casella, senza buco. */
+.org li:only-child { padding-top: 0; }
+.org li:only-child::before, .org li:only-child::after { display: none; }
+/* estremi del bus, con gli angoli arrotondati */
+.org li:first-child::before, .org li:last-child::after { border: 0; }
+.org li:last-child::before { border-right: 2px solid var(--a-linea-grafo, #9fb2d0); border-radius: 0 6px 0 0; }
+.org li:first-child::after { border-radius: 6px 0 0 0; }
+/* la calata dal genitore fino al bus dei figli */
+.org ul::before {
+  content: ""; position: absolute; top: 0; left: 50%; height: 1.5rem;
+  border-left: 2px solid var(--a-linea-grafo, #9fb2d0);
+}
+.org ul { position: relative; }
+/* le radici non hanno linee sopra di sé */
+.org > li { padding-top: 0; }
+.org > li::before, .org > li::after { display: none; }
+
+/* Il NODO del grafo: un riquadro compatto e curato, coi gesti che compaiono al
+   passaggio. Icona (casa/foglio) e pallino di stato in alto. */
+.nodo {
+  position: relative; display: inline-flex; flex-direction: column; gap: 2px;
+  min-width: 9.5rem; max-width: 14rem;
+  background: linear-gradient(180deg, #ffffff, #fbfcfe);
+  border: 1px solid var(--a-bordo); border-radius: 12px; padding: 0.6rem 0.8rem;
+  box-shadow: 0 1px 2px rgb(23 34 42 / 0.05), 0 6px 16px rgb(23 34 42 / 0.06);
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+}
+.nodo:hover {
+  border-color: var(--a-accento); transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgb(23 34 42 / 0.08), 0 12px 26px rgb(23 34 42 / 0.12);
+}
+.nodo--attiva { border-color: var(--a-accento); box-shadow: 0 0 0 2px var(--a-accento), 0 10px 24px rgb(47 75 124 / 0.18); }
+/* La home si distingue: un filo d'accento in cima. */
+.nodo--home { border-top: 3px solid var(--a-accento); }
+
+/* Il pallino di stato, in alto a destra. */
+.nodo__stato {
+  position: absolute; top: 0.6rem; right: 0.6rem; width: 9px; height: 9px; border-radius: 50%;
+  box-shadow: 0 0 0 3px rgb(255 255 255 / 0.8);
+}
+.nodo__stato--verde { background: #2e9e5b; }
+.nodo__stato--ambra { background: #d9a406; }
+.nodo__stato--grigia { background: #b6c0c9; }
+
+.nodo__apri {
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+  display: flex; flex-direction: column; gap: 2px; color: var(--a-testo); padding-right: 0.8rem;
+}
+.nodo__cima { display: flex; align-items: center; gap: 0.4rem; }
+.nodo__icona { display: inline-flex; color: var(--a-accento); flex: 0 0 auto; }
+.nodo--home .nodo__icona { color: var(--a-accento); }
+.nodo__titolo { font-weight: 600; font-size: 0.94rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nodo__percorso {
+  font-size: 0.72rem; color: var(--a-tenue);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* la barretta dei gesti: nascosta finché non si passa sul nodo */
+.nodo__barra {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  margin-top: 0.35rem; opacity: 0; transition: opacity 0.12s;
+}
+.nodo:hover .nodo__barra, .nodo:focus-within .nodo__barra { opacity: 1; }
+.nodo__barra button {
+  background: #fff; border: 1px solid var(--a-bordo); border-radius: 6px;
+  min-width: 1.5rem; padding: 2px 6px; font-size: 0.78rem; color: var(--a-testo); cursor: pointer;
+}
+.nodo__barra button:hover { background: var(--a-pannello); }
+.nodo__barra .pericolo { color: var(--a-pericolo); border-color: #e3bcbc; }
+.nodo__barra .pericolo:hover { background: var(--a-pericolo); color: #fff; border-color: transparent; }
+.nodo__spunta { display: inline-flex; align-items: center; }
+.nodo__spunta input { margin: 0; cursor: pointer; }
+.nodo__ordine {
+  width: 2.6rem; box-sizing: border-box; padding: 2px 4px;
+  border: 1px solid var(--a-bordo); border-radius: 6px; font: inherit; font-size: 0.72rem;
+}
+
+/* ════════════════════════ aspetto e testo del sito ════════════════════════ */
+.aspetto__colonne {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2rem; align-items: start;
+}
+.aspetto__campi { display: flex; flex-direction: column; gap: 0.7rem; }
+.aspetto__gruppo {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--a-tenue); margin: 0.6rem 0 0; font-weight: 600;
+}
+.aspetto__campo { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; }
+.aspetto__campo input[type="text"],
+.aspetto__campo textarea,
+.aspetto__campo select {
+  font: inherit; padding: 0.45rem 0.55rem; border: 1px solid var(--a-bordo);
+  border-radius: 6px; background: #fff; color: var(--a-testo);
+}
+.aspetto__campo input[type="color"] {
+  width: 3rem; height: 2rem; padding: 0; border: 1px solid var(--a-bordo);
+  border-radius: 6px; background: #fff; cursor: pointer;
+}
+.aspetto__etichetta {
+  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--a-tenue);
+}
+.aspetto__segmento { display: inline-flex; border: 1px solid var(--a-bordo); border-radius: 7px; overflow: hidden; }
+.aspetto__segmento button {
+  background: #fff; border: 0; border-right: 1px solid var(--a-bordo);
+  padding: 0.4rem 0.8rem; font: inherit; font-size: 0.85rem; color: var(--a-testo); cursor: pointer;
+}
+.aspetto__segmento button:last-child { border-right: 0; }
+.aspetto__segmento button.attivo { background: var(--a-accento); color: #fff; }
+.aspetto__sfumatura { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.2rem; }
+.aspetto__sfumatura input[type="range"] { width: 100%; }
+.aspetto__spunta { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: var(--a-testo); }
+
+/* ─────────────── i temi predefiniti (carte da un clic) ─────────────── */
+.aspetto__temi { margin-bottom: 0.4rem; }
+.aspetto__aiutino { font-size: 0.8rem; color: var(--a-tenue); margin: 0 0 0.6rem; }
+.temi__griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); gap: 0.6rem; }
+.tema-carta { display: flex; flex-direction: column; gap: 0.35rem; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.tema-carta__mostra {
+  position: relative; height: 3.4rem; border-radius: 8px; border: 1px solid var(--a-bordo);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.tema-carta:hover .tema-carta__mostra { border-color: var(--a-accento); box-shadow: 0 2px 8px rgb(0 0 0 / 0.1); }
+.tema-carta__aa { font-size: 1.4rem; font-weight: 600; line-height: 1; }
+.tema-carta__punto {
+  position: absolute; right: 0.5rem; bottom: 0.5rem; width: 0.9rem; height: 0.9rem;
+  border-radius: 50%; box-shadow: 0 0 0 2px rgb(255 255 255 / 0.75);
+}
+.tema-carta__nome { font-size: 0.78rem; color: var(--a-testo); }
+.aspetto__vetrina { position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.aspetto__anteprima {
+  border: 1px solid var(--a-bordo); border-radius: 8px; padding: 1.6rem;
+  line-height: 1.6;
+}
+.aspetto__anteprima .aspetto__h { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.4rem; }
+.aspetto__anteprima p { margin: 0 0 1rem; }
+.aspetto__bottone {
+  display: inline-block; padding: 0.5rem 1rem; border-radius: 6px;
+  background: var(--x-accento, #7c5c2b); color: #fff; text-decoration: none; font-size: 0.9rem;
+}
+.aspetto__azioni {
+  display: flex; align-items: center; gap: 0.8rem; margin-top: 1.4rem;
+  padding-top: 1rem; border-top: 1px solid var(--a-bordo);
+}
+.aspetto__azioni button {
+  border: 1px solid var(--a-bordo); background: #fff; border-radius: 6px;
+  padding: 0.5rem 0.9rem; font-size: 0.88rem; color: var(--a-testo);
+}
+.aspetto__azioni button.principale { background: var(--a-accento); color: #fff; border-color: transparent; }
+.aspetto__azioni button:hover { filter: brightness(0.97); }
+.aspetto__stato { color: var(--a-tenue); font-size: 0.82rem; margin-right: auto; }
+@media (max-width: 900px) {
+  .aspetto__colonne { grid-template-columns: 1fr; }
+  .aspetto__vetrina { position: static; }
+}
+
+/* ════════════════════════ anteprima a misura di dispositivo ════════════════ */
+.tavolozza__vista { display: flex; gap: 4px; }
+.tavolozza__vista button { flex: 1; text-align: center; }
+.tavolozza__vista button.attivo { background: var(--a-accento); border-color: transparent; }
+body.componendo.vista-tablet,
+body.componendo.vista-telefono { background: #d5dade; }
+body.componendo.vista-tablet #anteprima,
+body.componendo.vista-telefono #anteprima {
+  margin: 0 auto; border-left: 1px solid var(--a-bordo); border-right: 1px solid var(--a-bordo);
+  box-shadow: 0 0 40px rgb(0 0 0 / 0.15);
+}
+body.componendo.vista-tablet #anteprima { max-width: 834px; }
+body.componendo.vista-telefono #anteprima { max-width: 420px; }
+
+/* ════════════════════════ dettagli pagina (SEO) ════════════════════════ */
+.tavolozza__dettagli summary { cursor: pointer; font-size: 0.8rem; color: #b6c3cc; }
+.tavolozza__dettagli[open] summary { margin-bottom: 0.35rem; }
+.tavolozza__seo {
+  width: 100%; font: inherit; font-size: 0.8rem; margin-bottom: 0.4rem;
+  border-radius: 5px; border: 1px solid rgb(255 255 255 / 0.16);
+  background: rgb(255 255 255 / 0.10); color: #eef2f5; padding: 5px 7px;
+}
+
+/* ════════════════════════ la cronologia (modale) ════════════════════════ */
+.cronologia__velo {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgb(23 34 42 / 0.45);
+  display: flex; align-items: center; justify-content: center; padding: 1rem;
+}
+.cronologia {
+  background: #fff; color: var(--a-testo); border-radius: 10px;
+  width: min(32rem, 100%); max-height: 80vh; overflow-y: auto;
+  padding: 1rem 1.2rem; box-shadow: 0 20px 60px rgb(0 0 0 / 0.35);
+}
+.cronologia__testa { display: flex; align-items: center; justify-content: space-between; }
+.cronologia__testa .tavolozza__chiudi { color: var(--a-testo); }
+.cronologia__testa .tavolozza__chiudi:hover { background: var(--a-pannello); }
+.cronologia__aiuto { color: var(--a-tenue); font-size: 0.85rem; margin: 0.3rem 0 0.8rem; }
+.cronologia__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cronologia__lista li {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.6rem 0.2rem; border-top: 1px solid var(--a-bordo);
+}
+.cronologia__quando { font-size: 0.85rem; }
+.cronologia__lista button.principale {
+  background: var(--a-accento); color: #fff; border: 0; border-radius: 6px;
+  padding: 0.4rem 0.75rem; font-size: 0.8rem;
+}
+.cronologia__vuoto { color: var(--a-tenue); font-style: italic; }
+
+/* ════════════════════════ la casella dei messaggi ════════════════════════ */
+.albero__messaggi {
+  width: 100%; text-align: left; background: #fff; border: 1px solid var(--a-bordo);
+  border-radius: 6px; padding: 0.5rem 0.6rem; margin-bottom: 0.6rem;
+  color: var(--a-accento); font-size: 0.82rem;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+}
+.albero__messaggi:hover { background: var(--a-pannello); }
+.albero__conteggio {
+  min-width: 1.3rem; padding: 0 0.4rem; border-radius: 999px;
+  background: var(--a-pericolo); color: #fff; font-size: 0.72rem; text-align: center;
+}
+.posta__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+.posta__voce {
+  border: 1px solid var(--a-bordo); border-radius: 8px; padding: 0.9rem 1rem; background: #fff;
+}
+.posta__voce.nuovo { border-left: 3px solid var(--a-accento); background: #f7faff; }
+.posta__capo { display: flex; align-items: baseline; gap: 0.8rem; flex-wrap: wrap; }
+.posta__email { color: var(--a-accento); text-decoration: none; }
+.posta__email:hover { text-decoration: underline; }
+.posta__quando { color: var(--a-tenue); font-size: 0.8rem; margin-left: auto; }
+.posta__testo { margin: 0.5rem 0 0.7rem; white-space: pre-wrap; line-height: 1.5; }
+.posta__gesti { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.posta__pagina { color: var(--a-tenue); font-size: 0.8rem; margin-right: auto; }
+.posta__gesti button {
+  border: 1px solid var(--a-bordo); background: #fff; border-radius: 6px;
+  padding: 0.35rem 0.7rem; font-size: 0.8rem; color: var(--a-testo);
+}
+.posta__gesti button:hover { background: var(--a-pannello); }
+.posta__gesti .pericolo { color: var(--a-pericolo); border-color: #e3bcbc; }
+.posta__gesti .pericolo:hover { background: var(--a-pericolo); color: #fff; border-color: transparent; }
+.posta__vuoto { color: var(--a-tenue); font-style: italic; }
+
+/* ══════════════════════════ la procedura guidata (primo avvio) ══════════════════════════ */
+.proc__velo {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
+  background: rgb(23 34 42 / 0.55); padding: 1.2rem; backdrop-filter: blur(3px);
+}
+.proc {
+  width: min(40rem, 100%); max-height: 90vh; overflow-y: auto; background: #fff;
+  border-radius: 14px; padding: 1.6rem 1.7rem; box-shadow: 0 24px 70px rgb(0 0 0 / 0.4);
+}
+.proc__testa { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+.proc__testa strong { font-size: 1.15rem; }
+.proc__passi { display: flex; gap: 6px; }
+.proc__passi span { width: 26px; height: 5px; border-radius: 999px; background: var(--a-bordo); }
+.proc__passi span.attivo { background: var(--a-accento); }
+.proc__passo h2 { font-size: 1.25rem; margin: 0 0 0.3rem; font-weight: 600; }
+.proc__aiuto { color: var(--a-tenue); font-size: 0.9rem; margin: 0 0 1.1rem; }
+.proc__riga { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1rem; font-size: 0.9rem; }
+.proc__campo {
+  font: inherit; padding: 0.55rem 0.7rem; border: 1px solid var(--a-bordo);
+  border-radius: 8px; background: #fff; color: var(--a-testo);
+}
+.proc__campo:focus { outline: 2px solid var(--a-accento); outline-offset: 1px; border-color: var(--a-accento); }
+.proc__segmento { display: inline-flex; border: 1px solid var(--a-bordo); border-radius: 8px; overflow: hidden; align-self: flex-start; }
+.proc__segmento button {
+  background: #fff; border: 0; border-right: 1px solid var(--a-bordo);
+  padding: 0.45rem 0.9rem; font: inherit; font-size: 0.88rem; color: var(--a-testo); cursor: pointer;
+}
+.proc__segmento button:last-child { border-right: 0; }
+.proc__segmento button.attivo { background: var(--a-accento); color: #fff; }
+.tema-carta--scelto .tema-carta__mostra { border-color: var(--a-accento); box-shadow: 0 0 0 2px var(--a-accento); }
+.proc__azioni { display: flex; align-items: center; gap: 0.6rem; margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--a-bordo); }
+.proc__spazio { flex: 1; }
+.proc__azioni button {
+  border: 1px solid var(--a-bordo); background: #fff; border-radius: 8px;
+  padding: 0.55rem 1rem; font: inherit; font-size: 0.9rem; color: var(--a-testo); cursor: pointer;
+}
+.proc__azioni button.principale { background: var(--a-accento); color: #fff; border-color: transparent; }
+.proc__azioni button:hover { filter: brightness(0.98); }
+.proc__salta { color: var(--a-tenue) !important; }

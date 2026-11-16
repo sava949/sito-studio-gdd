@@ -1,0 +1,230 @@
+---
+/**
+ * «Contatti», disegnata a mano: i recapiti in grande, il portone da
+ * cercare arrivando, la mappa in tinta scura (Google Maps, dichiarata nella
+ * privacy) e il modulo, che scrive in /api/contatto come quello
+ * dell'editor. I recapiti sono i «Dati dello studio»; gli altri testi e la
+ * foto si modificano sulla pagina dall'editor (src/lib/contenuti.ts).
+ */
+export const prerender = false;
+
+import Base from "../layouts/Base.astro";
+import ContenutoEditor from "../components/ContenutoEditor.astro";
+import { contenutoDi, studioDi, marcatori } from "../lib/contenuti";
+import { testi, traduttore } from "../lib/lingua";
+
+const PREDEFINITO = testi(Astro).contatti;
+const L = traduttore(Astro);
+
+const { c, componi } = await contenutoDi(Astro, "/contatti", PREDEFINITO);
+const studio = await studioDi(Astro);
+const { t, r, f, l, v } = marcatori(componi);
+
+const inviato = Astro.url.searchParams.get("inviato");
+const errore = Astro.url.searchParams.get("errore");
+const ERRORI: Record<string, string> = {
+  vuoto: L("Scrivete il messaggio prima di inviare.", "Please write your message before sending."),
+  email: L("L'indirizzo email non sembra valido.", "The email address does not look valid."),
+  troppi: L("Troppi invii di seguito. Riprovate fra qualche minuto.", "Too many messages in a row. Please try again in a few minutes."),
+  salvataggio: L("Qualcosa è andato storto. Riprovate fra un momento.", "Something went wrong. Please try again in a moment."),
+  modulo: L("Qualcosa è andato storto. Riprovate fra un momento.", "Something went wrong. Please try again in a moment."),
+};
+const indirizzoQ = encodeURIComponent(`${studio.via}, ${studio.cap} ${studio.citta}`);
+const MAPPA = `https://www.google.com/maps?q=${indirizzoQ}&z=16&output=embed`;
+const MAPPA_ESTERNA = `https://www.google.com/maps/search/?api=1&query=${indirizzoQ}`;
+---
+
+<Base titolo="Contatti" descrizione={`Recapiti, indirizzo e orari dello ${studio.nome}. ${studio.via}, ${studio.cap} ${studio.citta}. Si riceve su appuntamento.`} senzaInvito componi={componi}>
+  <div class="pag">
+    <header class="pag-apertura">
+      <p class="pag-occhio" data-anima="sali" {...t("occhio")}>{c.occhio}</p>
+      <h1 data-anima="sali" {...r("titolo")} set:html={c.titolo} />
+      <p class="pag-lead" data-anima="sali" {...t("lead")}>{c.lead}</p>
+    </header>
+
+    <!-- ── i recapiti, in grande ── -->
+    <section class="recapiti-grandi">
+      <a class="recapito" href={studio.telefonoLink}>
+        <span class="pag-etichetta">{L("Telefono", "Telephone")}</span><strong>{studio.telefono}</strong><em {...t("telefonoNota")}>{c.telefonoNota}</em>
+      </a>
+      <a class="recapito" href={studio.cellulareLink}>
+        <span class="pag-etichetta">{L("Cellulare", "Mobile")}</span><strong>{studio.cellulare}</strong><em {...t("cellulareNota")}>{c.cellulareNota}</em>
+      </a>
+      <div class="recapito">
+        <span class="pag-etichetta">{studio.email ? L("Email e PEC", "Email and certified email") : L("Posta certificata", "Certified email (PEC)")}</span>
+        {studio.email && <a href={`mailto:${studio.email}`}>{studio.email}</a>}
+        {studio.pec && <a href={`mailto:${studio.pec}`}>{studio.pec}</a>}
+        {studio.pec2 && <a href={`mailto:${studio.pec2}`}>{studio.pec2}</a>}
+      </div>
+    </section>
+
+    <!-- ── arrivare: il portone al centro ── -->
+    <section class="pag-sezione arrivare">
+      <div class="arrivare__capo" data-anima="sali">
+        <p class="pag-occhio" {...t("arrivare.occhio")}>{c.arrivare.occhio}</p>
+        <h2 {...r("arrivare.titolo")} set:html={c.arrivare.titolo} />
+      </div>
+      <figure class="arrivare__porta">
+        <img src={c.arrivare.foto} alt={L(`Il portone di ${studio.via}`, `The front door at ${studio.via}`)} loading="lazy" {...f("arrivare.foto")} />
+      </figure>
+      <dl class="arrivare__dati" data-anima="sali">
+        <div><dt>{L("Indirizzo", "Address")}</dt><dd>{studio.via}<br />{studio.cap} {studio.citta} ({studio.provincia})</dd></div>
+        <div><dt>{L("Orari", "Hours")}</dt><dd>{studio.orari}<br />{L("su appuntamento", "by appointment")}</dd></div>
+        {studio.accesso && <div><dt>{L("Accesso", "Access")}</dt><dd>{studio.accesso}</dd></div>}
+        {studio.metro && <div><dt>Metro</dt><dd>{studio.metro}</dd></div>}
+        {studio.treno && <div><dt>{L("Treno", "Train")}</dt><dd>{studio.treno}</dd></div>}
+        {studio.autobus && <div><dt>{L("Autobus", "Bus")}</dt><dd>{studio.autobus}</dd></div>}
+      </dl>
+      <ul class="pastiglie arrivare__modi" data-anima="sali" {...l("modi")}>
+        {c.modi.map((m, k) => <li {...v(k)} {...t(`modi.${k}`)}>{m}</li>)}
+      </ul>
+    </section>
+
+    <!-- ── la mappa, in tinta con il sito ── -->
+    <section class="mappa">
+      <div class="mappa__cornice">
+        <iframe src={MAPPA} title={`${L("Mappa", "Map")}: ${studio.via}, ${studio.citta}`} referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+        <div class="mappa__scheda">
+          <p class="pag-etichetta">{studio.nome}</p>
+          <p class="mappa__indirizzo">{studio.via}<br />{studio.cap} {studio.citta}</p>
+          <a href={MAPPA_ESTERNA} target="_blank" rel="noopener" {...t("mappa.indicazioni")}>{c.mappa.indicazioni}</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── scrivere ── -->
+    <section class="pag-sezione scrivere" id="scrivere">
+      <div class="scrivere__modulo" data-anima="sali">
+        <p class="pag-occhio" {...t("scrivere.occhio")}>{c.scrivere.occhio}</p>
+        <h2 {...t("scrivere.titolo")}>{c.scrivere.titolo}</h2>
+        {inviato ? (
+          <p class="grazie" {...t("grazie")}>{c.grazie}</p>
+        ) : (
+          <form method="POST" action="/api/contatto" class="modulo">
+            <input type="hidden" name="pagina" value={L("/contatti", "/en/contatti")} />
+            <div class="modulo__esca" aria-hidden="true"><label>{L("Non compilare", "Leave blank")}<input type="text" name="azienda" tabindex="-1" autocomplete="off" /></label></div>
+            {errore && <p class="modulo__errore">{ERRORI[errore] ?? ERRORI.modulo}</p>}
+            <label class="campo"><input type="text" name="nome" autocomplete="name" placeholder=" " /><span>{L("Nome e cognome", "Full name")}</span></label>
+            <label class="campo"><input type="email" name="email" autocomplete="email" placeholder=" " /><span>Email</span></label>
+            <label class="campo"><textarea name="messaggio" rows="5" required placeholder=" "></textarea><span>{L("Di cosa si tratta", "What it is about")}</span></label>
+            <p class="modulo__nota">{L("Il trattamento dei dati è descritto nell'", "How your data is processed is explained in the ")}<a href="/privacy">{L("informativa privacy", "privacy notice")}</a>.</p>
+            <button type="submit" class="bottone" {...t("scrivere.bottone")}>{c.scrivere.bottone}</button>
+          </form>
+        )}
+      </div>
+      <aside class="scrivere__avvertenze" data-anima="sali">
+        <p class="pag-etichetta" {...t("avvertenze.etichetta")}>{c.avvertenze.etichetta}</p>
+        <div {...r("avvertenze.testo")} set:html={c.avvertenze.testo} />
+        <p><a class="avvertenze__link" href="/primo-colloquio" {...t("avvertenze.link")}>{c.avvertenze.link}</a></p>
+      </aside>
+    </section>
+  </div>
+  <ContenutoEditor c={c} componi={componi} />
+</Base>
+
+<style>
+  .recapiti-grandi { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--linea); border: 1px solid var(--linea); }
+  .recapito { display: flex; flex-direction: column; gap: .6rem; padding: 2.4rem 2rem; background: var(--carta); text-decoration: none; color: inherit; transition: background .4s; }
+  a.recapito:hover { background: #30343a; color: inherit; }
+  .recapito strong { font-family: var(--serif); font-weight: 400; font-size: clamp(1.6rem, 2.6vw, 2.2rem); color: #fff; }
+  a.recapito:hover strong { color: var(--accento-viva); }
+  .recapito em { font-style: normal; font-size: .85rem; color: var(--tenue); }
+  .recapito > a { color: #fff; text-decoration: none; font-size: 1rem; word-break: break-all; }
+  .recapito > a:hover { color: var(--accento-viva); }
+
+  .arrivare { text-align: center; margin-top: clamp(4rem, 9vw, 7rem); }
+  .arrivare__capo .pag-occhio { justify-content: center; }
+  .arrivare h2 { font-size: clamp(2.2rem, 4.4vw, 3.6rem); line-height: 1.05; margin-bottom: 3rem; }
+  .arrivare h2 em { color: var(--accento-viva); }
+  /* Il portone intero, alto poco più di mezzo schermo. */
+  .arrivare__porta { width: min(22rem, 80%, 52svh * 500 / 628); margin: 0 auto 4.5rem; position: relative; }
+  .arrivare__porta img {
+    width: 100%; display: block; aspect-ratio: 500 / 628; object-fit: cover;
+    /* Sfumato nel fondo come il portone della home. */
+    -webkit-mask-image: radial-gradient(ellipse 60% 62% at 50% 48%, #000 62%, rgba(0,0,0,.7) 80%, rgba(0,0,0,.25) 92%, transparent 100%);
+    mask-image: radial-gradient(ellipse 60% 62% at 50% 48%, #000 62%, rgba(0,0,0,.7) 80%, rgba(0,0,0,.25) 92%, transparent 100%);
+  }
+  .arrivare__dati { margin: 0 auto 2.2rem; max-width: 60rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 2.5rem; text-align: left; }
+  .arrivare__dati div { padding: 1rem 0; border-top: 1px solid var(--linea); }
+  .arrivare__dati dt { font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--tenue); margin-bottom: .3rem; }
+  .arrivare__dati dd { margin: 0; color: var(--inchiostro-2); }
+  .arrivare__modi { justify-content: center; }
+
+  /* La mappa: quella di Google, portata in tinta scura con un filtro
+     (invertita e girata di tono, così il rosso resta rosso), sfumata ai
+     bordi, con la scheda dello studio sopra. */
+  .mappa { margin-bottom: clamp(4rem, 9vw, 7rem); }
+  .mappa__cornice { position: relative; aspect-ratio: 21 / 9; overflow: hidden; border: 1px solid var(--linea); background: #1c1f22; }
+  .mappa__cornice iframe {
+    /* Più alta della cornice: così la scheda di Google in alto e le scritte
+       in basso restano fuori, e si vede solo la mappa. */
+    position: absolute; left: 0; top: -130px; width: 100%; height: calc(100% + 190px); border: 0;
+    filter: invert(.92) hue-rotate(180deg) saturate(.45) brightness(.92) contrast(.92);
+  }
+  .mappa__cornice::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    box-shadow: inset 0 0 120px 40px rgba(28, 31, 34, .85);
+    background: radial-gradient(ellipse 18% 26% at 50% 50%, rgba(200, 16, 26, .12), transparent 70%);
+  }
+  .mappa__scheda {
+    position: absolute; left: clamp(1rem, 3vw, 2.4rem); bottom: clamp(1rem, 3vw, 2.4rem); z-index: 1;
+    padding: 1.6rem 1.8rem; background: rgba(28, 31, 34, .92); backdrop-filter: blur(6px);
+    border-left: 2px solid var(--accento); box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .9);
+  }
+  .mappa__indirizzo { font-family: var(--serif); font-size: 1.35rem; line-height: 1.3; color: #fff; margin: 0 0 1rem; }
+  .mappa__scheda a { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: var(--inchiostro); text-decoration: none; border-bottom: 1px solid var(--accento); }
+  .mappa__scheda a:hover { color: var(--accento-viva); }
+
+  .scrivere { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(2.5rem, 7vw, 6rem); align-items: start; }
+  .scrivere h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin-bottom: 2.4rem; }
+  .modulo { display: flex; flex-direction: column; gap: 1.6rem; }
+  /* I campi con l'etichetta che sale quando si scrive. */
+  .campo { position: relative; display: block; }
+  .campo input, .campo textarea {
+    width: 100%; font: inherit; font-size: 1.05rem; color: #fff; background: transparent;
+    border: 0; border-bottom: 1px solid var(--linea-forte); padding: 1.5rem 0 .6rem; border-radius: 0; resize: vertical;
+    transition: border-color .3s;
+  }
+  .campo input:focus, .campo textarea:focus { outline: none; border-bottom-color: var(--accento-viva); }
+  .campo span {
+    position: absolute; left: 0; top: 1.5rem; color: var(--tenue); pointer-events: none;
+    transition: top .3s, font-size .3s, letter-spacing .3s, color .3s;
+  }
+  .campo :is(input, textarea):is(:focus, :not(:placeholder-shown)) + span {
+    top: 0; font-size: .66rem; letter-spacing: .24em; text-transform: uppercase; color: var(--accento-viva);
+  }
+  .modulo__nota { font-size: .85rem; color: var(--tenue); margin: 0; }
+  .modulo .bottone { align-self: flex-start; padding: 1.2rem 2.4rem; }
+  .modulo__esca { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .modulo__errore { margin: 0; padding: .8rem 1rem; border-left: 2px solid var(--accento-viva); background: rgba(200, 16, 26, .1); color: #fff; }
+  .grazie { font-family: var(--serif); font-style: italic; font-size: 1.6rem; color: #fff; border-left: 2px solid var(--accento-viva); padding-left: 1.4rem; }
+  .scrivere__avvertenze { padding: 2.2rem; border: 1px solid var(--linea); background: rgba(0, 0, 0, .12); }
+  .scrivere__avvertenze p:not(.pag-etichetta) { color: var(--inchiostro-2); font-size: .98rem; }
+  .scrivere__avvertenze :global(p) { color: var(--inchiostro-2); font-size: .98rem; }
+  .avvertenze__link { font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; color: #fff; text-decoration: none; border-bottom: 1px solid var(--accento); }
+  .avvertenze__link:hover { color: var(--accento-viva); }
+
+  /* Telefono: recapiti compatti, indicazioni su due colonne. */
+  @media (max-width: 760px) {
+    .recapito { padding: 1.3rem 1.2rem; gap: .35rem; }
+    .recapito strong { font-size: 1.45rem; }
+    .arrivare { margin-top: 2.6rem; }
+    .arrivare h2 { font-size: 2rem; margin-bottom: 1.6rem; }
+    .arrivare__porta { margin-bottom: 2rem; }
+    .arrivare__dati { grid-template-columns: 1fr 1fr !important; gap: 0 1rem; }
+    .arrivare__dati div { padding: .7rem 0; }
+    .arrivare__dati dd { font-size: .9rem; }
+    .mappa { margin-bottom: 2.8rem; }
+    .mappa__cornice { aspect-ratio: 1 / 1 !important; }
+    .mappa__scheda { left: .8rem; right: .8rem; bottom: .8rem; padding: 1rem 1.2rem; }
+    .mappa__indirizzo { font-size: 1.1rem; margin-bottom: .6rem; }
+    .scrivere h2 { margin-bottom: 1.4rem; }
+    .scrivere__avvertenze { padding: 1.4rem; }
+  }
+  @media (max-width: 860px) {
+    .recapiti-grandi, .scrivere { grid-template-columns: 1fr; }
+    .mappa__cornice { aspect-ratio: 4 / 5; }
+    .mappa__scheda { right: 1rem; }
+    .arrivare__dati { grid-template-columns: 1fr; }
+  }
+</style>

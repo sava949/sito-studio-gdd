@@ -1,0 +1,234 @@
+---
+/**
+ * «Lo studio», disegnata a mano: la storia, di cosa si occupa e com'è
+ * organizzato lo studio, gli ambienti (una galleria che scorre in
+ * orizzontale), il metodo di lavoro, lo studio in sintesi e il rimando ai
+ * professionisti (che hanno una pagina loro, src/pages/professionisti.astro).
+ * Testi e foto si modificano dall'editor (vedi src/lib/contenuti.ts);
+ * i valori di partenza stanno in src/dati/contenuti.mjs.
+ */
+export const prerender = false;
+
+import Base from "../layouts/Base.astro";
+import ContenutoEditor from "../components/ContenutoEditor.astro";
+import { contenutoDi, studioDi, marcatori, ancoraPersona } from "../lib/contenuti";
+import { testi, traduttore } from "../lib/lingua";
+
+const { studio: PREDEFINITO, professionisti: PROFESSIONISTI } = testi(Astro);
+const L = traduttore(Astro);
+
+const { c, componi } = await contenutoDi(Astro, "/studio", PREDEFINITO);
+const { t, r, f, l, v } = marcatori(componi);
+/* Sede, orari, come arrivare: i «Dati dello studio». I nomi: la pagina dei
+   professionisti. */
+const dati = await studioDi(Astro);
+const persone = (await contenutoDi(Astro, "/professionisti", PROFESSIONISTI)).c.elenco;
+const B = c.breve.etichette;
+const comeArrivare = [dati.metro && `Metro ${dati.metro}`, dati.treno, dati.autobus].filter(Boolean).join(" · ");
+const ROMANI = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+---
+
+<Base titolo="Lo studio" descrizione="Lo Studio Legale G.D.D. a Roma: la storia, com'è organizzato, il metodo di lavoro e gli ambienti di Via della Balduina 107." componi={componi}>
+  <div class="pag">
+    <header class="pag-apertura">
+      <p class="pag-occhio" data-anima="sali" {...t("occhio")}>{c.occhio}</p>
+      <h1 data-anima="sali" {...r("titolo")} set:html={c.titolo} />
+      <p class="pag-lead" data-anima="sali" {...t("lead")}>{c.lead}</p>
+    </header>
+
+    <section class="pag-sezione pag-due" {...l("colonne")}>
+      {c.colonne.map((col, i) => (
+        <div data-anima="sali" {...v(i)}>
+          <p class="pag-etichetta" {...t(`colonne.${i}.etichetta`)}>{col.etichetta}</p>
+          <p {...t(`colonne.${i}.testo`)}>{col.testo}</p>
+        </div>
+      ))}
+    </section>
+  </div>
+
+  <!-- ── gli ambienti: una galleria che scorre di lato ── -->
+  <section class="ambienti" aria-label={L("Gli ambienti dello studio", "The firm's premises")}>
+    <div class="ambienti__capo pag" data-anima="sali">
+      <div>
+        <p class="pag-occhio" {...t("ambienti.occhio")}>{c.ambienti.occhio}</p>
+        <h2 {...t("ambienti.titolo")}>{c.ambienti.titolo}</h2>
+      </div>
+      <div class="ambienti__frecce">
+        <button type="button" data-nastro="-1" aria-label={L("Foto precedente", "Previous photo")}>←</button>
+        <button type="button" data-nastro="1" aria-label={L("Foto successiva", "Next photo")}>→</button>
+      </div>
+    </div>
+    <div class="ambienti__nastro" tabindex="0" {...l("ambienti.foto")}>
+      {c.ambienti.foto.map((a, i) => (
+        <figure class:list={["ambiente", a.largo && "ambiente--largo"]} {...v(i)}>
+          <img src={a.url} alt={a.alt} loading="lazy" {...f(`ambienti.foto.${i}.url`)} />
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <div class="pag">
+    <!-- ── il metodo ── -->
+    <section class="pag-sezione metodo">
+      <p class="pag-occhio" data-anima="sali" {...t("metodo.occhio")}>{c.metodo.occhio}</p>
+      <h2 data-anima="sali" {...t("metodo.titolo")}>{c.metodo.titolo}</h2>
+      <div class="metodo__voci carosello-tel" {...l("metodo.voci")}>
+        {c.metodo.voci.map((x, i) => (
+          <div class="valore" data-anima="sali" {...v(i)}>
+            <span>{ROMANI[i] ?? i + 1}</span>
+            <h3 {...t(`metodo.voci.${i}.titolo`)}>{x.titolo}</h3>
+            <p {...t(`metodo.voci.${i}.testo`)}>{x.testo}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- ── lo studio in sintesi ── -->
+    <section class="pag-sezione breve">
+      <div data-anima="sali">
+        <p class="pag-occhio" {...t("breve.occhio")}>{c.breve.occhio}</p>
+        <h2 {...t("breve.titolo")}>{c.breve.titolo}</h2>
+        <p class="breve__nota"><span {...t("breve.nota")}>{c.breve.nota}</span> <a href="/contatti">{L("Contatti", "Contact")} →</a></p>
+      </div>
+      <dl class="breve__dati" data-anima="sali">
+        <div><dt>{B.sede}</dt><dd>{dati.via}, {dati.cap} {dati.citta}</dd></div>
+        <div><dt>{B.riceve}</dt><dd {...t("breve.riceve")}>{c.breve.riceve}</dd></div>
+        <div><dt>{B.orari}</dt><dd>{dati.orari}</dd></div>
+        <div><dt>{B.lingue}</dt><dd {...t("breve.lingue")}>{c.breve.lingue}</dd></div>
+        {comeArrivare && <div><dt>{B.arrivare}</dt><dd>{comeArrivare}</dd></div>}
+        {dati.accesso && <div><dt>{B.accesso}</dt><dd>{dati.accesso}</dd></div>}
+        <div><dt>{B.albo}</dt><dd {...t("breve.albo")}>{c.breve.albo}</dd></div>
+        <div><dt>{B.assicurazione}</dt><dd {...r("breve.assicurazione")} set:html={c.breve.assicurazione} /></div>
+      </dl>
+    </section>
+
+    <!-- ── i professionisti: i nomi, e il rimando alla loro pagina ── -->
+    <section class="pag-sezione squadra">
+      <div data-anima="sali">
+        <p class="pag-occhio" {...t("professionisti.occhio")}>{c.professionisti.occhio}</p>
+        <h2 {...t("professionisti.titolo")}>{c.professionisti.titolo}</h2>
+        <a class="bottone" href="/professionisti" {...t("professionisti.bottone")}>{c.professionisti.bottone}</a>
+      </div>
+      <ul class="squadra__nomi" data-anima="sali">
+        {persone.map((p) => (
+          <li>
+            <a href={`/professionisti#${ancoraPersona(p.nome)}`}>
+              <span class="squadra__nome">{p.nome}</span>
+              <span class="squadra__ruolo">{p.ruolo}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </div>
+  <ContenutoEditor c={c} componi={componi} />
+</Base>
+
+<style>
+  /* Le colonne di apertura: quattro, a due a due. */
+  .pag-due { row-gap: clamp(2.5rem, 5vw, 4rem); }
+
+  /* La galleria: un nastro che scorre di lato, a scatti morbidi. */
+  .ambienti { padding-block: clamp(4rem, 9vw, 7rem); border-top: 1px solid var(--linea); overflow: hidden; }
+  .ambienti__capo { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; max-width: none; margin-bottom: 2.6rem; }
+  .ambienti__capo h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin: 0; }
+  /* Le frecce: un'immagine alla volta, con uno scorrimento morbido. */
+  .ambienti__frecce { display: flex; gap: .8rem; }
+  .ambienti__frecce button {
+    width: 3.4rem; height: 3.4rem; border-radius: 50%; border: 1px solid var(--linea-forte); background: transparent;
+    color: #fff; font-size: 1.1rem; cursor: pointer; transition: background .3s, border-color .3s;
+  }
+  .ambienti__frecce button:hover { background: var(--accento); border-color: var(--accento); }
+  .ambienti__frecce button:disabled { opacity: .3; cursor: default; background: transparent; border-color: var(--linea-forte); }
+  .ambienti__nastro {
+    display: flex; gap: 1.6rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    padding: 0 clamp(1.25rem, 6vw, 6rem) 1.6rem; scrollbar-width: thin; scrollbar-color: var(--accento) transparent;
+  }
+  .ambienti__nastro:focus-visible { outline: 1px solid var(--accento-viva); outline-offset: -1px; }
+  .ambiente { flex: 0 0 auto; margin: 0; scroll-snap-align: start; }
+  .ambiente img { height: clamp(18rem, 52vh, 30rem); width: auto; aspect-ratio: 3 / 4; object-fit: cover; display: block; filter: saturate(.9); transition: filter .6s; }
+  .ambiente--largo img { aspect-ratio: 3 / 2; }
+  .ambiente:hover img { filter: none; }
+
+  /* Il metodo: tre voci numerate in cifre romane, come i valori della pagina
+     di Tommaso Novelli e i tratti dell'anticamera. */
+  .metodo__voci {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    border-block: 1px solid var(--linea); background: rgba(0, 0, 0, .12);
+  }
+  .valore { padding: clamp(2rem, 4vw, 3.2rem) clamp(1.2rem, 3vw, 2.6rem); border-left: 1px solid var(--linea); }
+  .valore:first-child { border-left: 0; }
+  .valore span { font-family: var(--serif); color: var(--accento-viva); letter-spacing: .1em; }
+  .valore h3 { font-size: 1.7rem; margin: .7rem 0 .6rem; }
+  .valore p { margin: 0; color: var(--tenue); font-size: .98rem; }
+  .metodo__voci .valore:nth-child(2) { transition-delay: .12s; }
+  .metodo__voci .valore:nth-child(3) { transition-delay: .24s; }
+
+  /* In sintesi e i professionisti: il titolo a sinistra, l'elenco a destra
+     (come «Cosa portare» nella pagina del colloquio). */
+  .breve, .squadra { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+  .breve h2, .squadra h2 { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 1.2rem; }
+  .breve__nota { color: var(--tenue); margin: 0; }
+  .breve__nota a { color: var(--inchiostro); text-decoration: none; border-bottom: 1px solid var(--accento); white-space: nowrap; }
+  .breve__nota a:hover { color: var(--accento-viva); }
+  .breve__dati { margin: 0; }
+  .breve__dati div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: 1rem 0; border-top: 1px solid var(--linea); }
+  .breve__dati div:last-child { border-bottom: 1px solid var(--linea); }
+  .breve__dati dt { font-size: .7rem; letter-spacing: .22em; text-transform: uppercase; color: var(--tenue); padding-top: .25rem; }
+  .breve__dati dd { margin: 0; font-size: 1.02rem; color: var(--inchiostro-2); }
+  .breve__dati dd :global(a) { color: var(--inchiostro); text-decoration: none; border-bottom: 1px solid var(--accento); }
+  .breve__dati dd :global(a:hover) { color: var(--accento-viva); }
+
+  .squadra .bottone { margin-top: 1rem; }
+  .squadra__nomi { list-style: none; margin: 0; padding: 0; }
+  .squadra__nomi li { border-top: 1px solid var(--linea); }
+  .squadra__nomi li:last-child { border-bottom: 1px solid var(--linea); }
+  .squadra__nomi a { display: block; padding: 1.4rem 0; text-decoration: none; transition: padding .35s; }
+  .squadra__nomi a:hover { padding-left: 1rem; }
+  .squadra__nomi a:hover .squadra__nome { color: var(--accento-viva); }
+  .squadra__nome { display: block; font-family: var(--serif); font-size: 1.6rem; color: #fff; transition: color .3s; }
+  .squadra__ruolo { display: block; font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; color: var(--accento-viva); margin-top: .3rem; }
+
+  @media (max-width: 820px) {
+    .ambienti__capo { flex-direction: column; align-items: flex-start; }
+    .breve, .squadra, .metodo__voci { grid-template-columns: 1fr; }
+    .valore { border-left: 0; border-top: 1px solid var(--linea); }
+    .valore:first-child { border-top: 0; }
+  }
+  /* Telefono: il metodo in un carosello, i dati più stretti. */
+  @media (max-width: 760px) {
+    .valore { border-top: 0 !important; border-left: 1px solid var(--linea) !important; padding: 1.8rem 1.4rem; }
+    .valore:first-child { border-left: 0 !important; }
+    .valore h3 { font-size: 1.35rem; }
+    .breve h2, .squadra h2 { font-size: 1.8rem; }
+    .breve__dati div { grid-template-columns: 6.4rem minmax(0, 1fr); padding: .8rem 0; }
+    .breve__dati dd { font-size: .95rem; }
+    .squadra__nomi a { padding: 1rem 0; }
+    .squadra__nome { font-size: 1.3rem; }
+  }
+</style>
+
+<script is:inline>
+  /* Le frecce spostano il nastro di una foto; la rotella del mouse, quando il
+     puntatore è sulla galleria, scorre in orizzontale. Sul telefono si
+     scorre col dito, come sempre. */
+  document.querySelectorAll(".ambienti").forEach(function (sez) {
+    var n = sez.querySelector(".ambienti__nastro");
+    var frecce = sez.querySelectorAll("[data-nastro]");
+    var passo = function () { var f = n.querySelector(".ambiente"); return f ? f.getBoundingClientRect().width + 26 : 400; };
+    var aggiorna = function () {
+      frecce[0].disabled = n.scrollLeft < 4;
+      frecce[1].disabled = n.scrollLeft + n.clientWidth >= n.scrollWidth - 4;
+    };
+    frecce.forEach(function (b) {
+      b.addEventListener("click", function () { n.scrollBy({ left: passo() * Number(b.dataset.nastro), behavior: "smooth" }); });
+    });
+    n.addEventListener("wheel", function (e) {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+      var fine = n.scrollLeft + n.clientWidth >= n.scrollWidth - 4;
+      if ((e.deltaY > 0 && fine) || (e.deltaY < 0 && n.scrollLeft < 4)) return;
+      e.preventDefault(); n.scrollBy({ left: e.deltaY * 1.4 });
+    }, { passive: false });
+    n.addEventListener("scroll", aggiorna, { passive: true }); aggiorna();
+  });
+</script>

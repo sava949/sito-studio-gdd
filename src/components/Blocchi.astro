@@ -1,0 +1,448 @@
+---
+/**
+ * Rende una pagina composta a blocchi, su una griglia di dodici colonne.
+ *
+ * Ogni tipo del catalogo (`BLOCCHI` in lib/schema.ts) ha qui il suo caso.
+ * Aggiungerne uno è una voce là e un caso qui: l'editor lo mostra da solo.
+ *
+ * LA GRIGLIA. Ogni sezione dichiara quante colonne occupa (`larghezza`, da 1 a
+ * 12). Dodici perché si divide per 2, 3, 4 e 6: metà, un terzo, un quarto, due
+ * terzi vengono tutti esatti, e sono le larghezze che una persona chiede
+ * davvero. Le sezioni si dispongono da sole una a fianco all'altra finché la
+ * riga si riempie, e poi vanno a capo — come le parole in un paragrafo.
+ *
+ * Non sono coordinate libere in x e y, ed è la differenza che tiene in piedi
+ * la pagina sul telefono: sotto i 620 px ogni sezione torna a tutta larghezza
+ * e la pagina resta leggibile. Con le coordinate, una composizione fatta a
+ * 1400 px diventa un ammasso sovrapposto — e da lì arriva metà dei
+ * visitatori.
+ *
+ * L'HTML dei campi `ricco` arriva dall'editor, quindi da chi amministra il
+ * sito — la stessa fiducia che si dà a un file del progetto. Non è contenuto
+ * di un visitatore, e non c'è niente da ripulire.
+ */
+import { ANIMAZIONI, CARATTERI } from "../lib/schema";
+
+interface Props {
+  blocchi?: any[];
+  /** Nell'anteprima dell'editor ogni cella si fa riconoscere, così l'editor
+      sa quale sezione ha preso in mano. Sul sito pubblico questi attributi
+      non ci sono: non servono a chi legge, e dire a tutti come è fatta
+      dentro una pagina non è informazione, è rumore nel sorgente. */
+  componibile?: boolean;
+  /** Foglio libero: le sezioni non si incolonnano, stanno dove sono state
+      messe. Vedi la nota lunga qui sotto. */
+  foglio?: boolean;
+  /** Altezza del foglio, in percentuale della sua larghezza. */
+  altezzaFoglio?: number;
+  /** Sul foglio libero anche IL TITOLO della pagina sta sul foglio, e si
+      sposta come tutto il resto. Arriva dal template con testo e posizione
+      (campi `titoloX/Y/W…` del documento); fuori dal foglio resta dov'è
+      sempre stato, sopra il contenuto. */
+  testata?: {
+    titolo?: string;
+    sottotitolo?: string;
+    x?: unknown; y?: unknown; w?: unknown;
+    allinea?: unknown; colore?: unknown; font?: unknown; dimensione?: unknown; anima?: unknown;
+  } | null;
+}
+const {
+  blocchi = [],
+  componibile = false,
+  foglio = false,
+  altezzaFoglio = 70,
+  testata = null,
+} = Astro.props;
+
+/* Il modulo di contatto legge dall'URL l'esito del proprio invio: dopo il
+   POST l'endpoint rimanda qui con `?inviato=1` o `?errore=…`. */
+const percorsoCorrente = Astro.url.pathname;
+const inviato = Astro.url.searchParams.get("inviato");
+const erroreContatto = Astro.url.searchParams.get("errore");
+const MESSAGGI_ERRORE: Record<string, string> = {
+  vuoto: "Scrivi il messaggio prima di inviare.",
+  email: "L'indirizzo email non sembra valido.",
+  troppi: "Troppi invii di seguito. Riprova fra qualche minuto.",
+  salvataggio: "Qualcosa è andato storto. Riprova fra un momento.",
+  modulo: "Qualcosa è andato storto. Riprova fra un momento.",
+};
+
+const voci = (v: unknown): string[] =>
+  Array.isArray(v)
+    ? v.map((x) => (typeof x === "string" ? x : String(x?.voce ?? ""))).filter(Boolean)
+    : [];
+
+/** Le colonne occupate da una sezione. Fuori dai limiti, o assente, vale la
+    riga intera: una pagina salvata prima che la griglia esistesse deve
+    continuare a rendersi esattamente com'era. */
+const colonne = (b: any): number => {
+  const n = Math.round(Number(b?.larghezza));
+  return Number.isFinite(n) && n >= 1 && n <= 12 ? n : 12;
+};
+
+/**
+ * L'altezza minima chiesta a una sezione, in pixel. Zero vuol dire «quella
+ * che serve al contenuto», ed è il caso normale.
+ *
+ * MINIMA e non fissa, ed è la differenza che tiene in piedi la pagina: con
+ * un'altezza fissa, un testo più lungo di quanto si era previsto uscirebbe
+ * dal suo riquadro o verrebbe tagliato — e succederebbe il giorno che
+ * qualcuno corregge una frase, cioè lontano da qui.
+ */
+const alta = (b: any): string => {
+  const n = Math.round(Number(b?.altezza));
+  return Number.isFinite(n) && n > 0 && n <= 2000 ? `;--alt:${n}px` : "";
+};
+
+/* ─────────────────────────── il foglio libero ───────────────────────────
+ *
+ * Qui le sezioni non si incolonnano: stanno dove sono state messe, e possono
+ * stare in mezzo, sovrapposte, dove capita. È la cosa che è stata chiesta
+ * quattro volte, e questa è la forma in cui si può dare senza rompere la
+ * pagina sul telefono.
+ *
+ * TUTTO È IN PERCENTUALE della larghezza del foglio — la posizione, la
+ * larghezza, l'altezza — e il foglio ha un rapporto d'aspetto fisso. Non ci
+ * sono pixel da nessuna parte, quindi il foglio si rimpicciolisce in
+ * proporzione: quello composto davanti a uno schermo da 1400 px, su un
+ * telefono da 390, è la stessa identica composizione, un terzo più piccola.
+ * Niente si sovrappone in modo diverso da come è stato lasciato.
+ *
+ * Anche il testo si rimpicciolisce, e non è un effetto collaterale ma la
+ * condizione perché il resto funzioni: con `container-type: inline-size` sul
+ * foglio, `1cqw` è l'uno per cento della sua larghezza, e i corpi del testo
+ * sono scritti in quell'unità. Un testo che restasse di dimensione fissa,
+ * dentro un riquadro che si rimpicciolisce, uscirebbe fuori.
+ *
+ * Il costo, e va detto in chiaro a chi sceglie questo modo: **sul telefono il
+ * testo diventa piccolo**. È il prezzo della libertà di mettere le cose dove
+ * si vuole, e non c'è modo di non pagarlo — o si riadatta (e allora le
+ * posizioni non si possono rispettare) o si rimpicciolisce.
+ */
+const numero = (v: unknown, predefinito: number): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : predefinito;
+};
+
+/* Una sezione senza coordinate — perché la pagina è appena passata al foglio,
+   e prima stava su una griglia — non finisce nell'angolo insieme a tutte le
+   altre: si mette in colonna, dov'era. Passare al foglio libero e vedersi il
+   contenuto ammucchiato in un punto solo, sovrapposto, sembra averlo perso —
+   ed è la prima cosa che succede a chiunque provi il modo nuovo su una pagina
+   che esisteva già. */
+const posato = (b: any, i: number): string =>
+  `--x:${numero(b?.x, 4)};--y:${numero(b?.y, 4 + i * 14)};` +
+  `--w:${numero(b?.w, 92)};--h:${numero(b?.h, 0)}`;
+
+const stileDi = (b: any, i: number): string =>
+  foglio ? posato(b, i) : `--span:${colonne(b)}${alta(b)}`;
+
+/* Il colore e il carattere che la sezione ha scelto dalla tavolozza.
+   Il colore arriva già come colore CSS — il salvataggio lo ha verificato
+   contro il catalogo — mentre il carattere è una CHIAVE, e la pila vera sta
+   in `CARATTERI`: così la pila di «serif» si può correggere là senza toccare
+   le pagine salvate. `data-vestita` accende la regola di global.css che
+   impone colore e carattere a TUTTO il testo della sezione, titoli e
+   citazioni compresi: le eccezioni parziali sembrano un difetto. */
+/** La grandezza del carattere scelta per la sezione (o il titolo), come
+    fattore. Fuori da 0,3–5, o assente, vale 1 — una sezione salvata prima che
+    esistesse la scala si rende com'era. */
+const scala = (v: unknown): number | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0.3 && n <= 5 && n !== 1 ? n : null;
+};
+
+/** L'effetto d'ingresso, se valido: diventa `data-anima` sulla cella, che uno
+    script della pagina pubblica rivela allo scorrimento. */
+const animaAttr = (v: unknown): Record<string, string> =>
+  typeof v === "string" && v !== "" && ANIMAZIONI.some((x) => x.valore === v)
+    ? { "data-anima": v }
+    : {};
+
+const vestito = (b: any): { stile: string; segno: Record<string, string> } => {
+  let s = "";
+  if (typeof b?.colore === "string" && /^#[0-9a-fA-F]{6}$/.test(b.colore)) {
+    s += `;color:${b.colore}`;
+  }
+  const c = CARATTERI.find((x) => x.valore === b?.font && x.pila);
+  if (c) s += `;font-family:${c.pila}`;
+  const sc = scala(b?.dimensione);
+  if (sc) s += `;--scala:${sc}`;
+  // L'allineamento del testo, terza voce del vestito: sinistra è il default
+  // del sito, quindi si scrive solo quando qualcuno ha scelto altro.
+  if (b?.allinea === "centro") s += ";text-align:center";
+  else if (b?.allinea === "destra") s += ";text-align:right";
+  else if (b?.allinea === "sinistra") s += ";text-align:left";
+  return { stile: s, segno: s ? { "data-vestita": "" } : {} };
+};
+
+/** C'è del testo vero? Una sezione appena aggiunta è vuota, e vuota sul
+    foglio non si vede: chi ha premuto il pulsante conclude che il pulsante
+    non funziona. Nell'editor il vuoto mostra un INVITO — sempre dentro
+    `span.invito`, perché l'editor deve toglierlo prima di aprire la
+    scrittura: se restasse, un doppio clic e una sfocatura lo salverebbero
+    come contenuto vero. Sul sito pubblico il vuoto resta vuoto. */
+const pieno = (v: unknown): boolean =>
+  typeof v === "string" && v.trim().length > 0;
+
+/** Un indirizzo sicuro per un `href`: si accettano http(s), mailto, tel e i
+    percorsi interni; si RIFIUTA qualunque altro schema (`javascript:`, `data:`
+    …), che cliccato eseguirebbe nel browser del visitatore. Vuoto = non
+    mostrare il collegamento. */
+const urlSicuro = (v: unknown): string => {
+  const s = String(v ?? "").trim();
+  if (!s) return "";
+  if (/^(https?:|mailto:|tel:)/i.test(s)) return s;
+  if (/^[/#?]/.test(s)) return s; // percorso interno
+  if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return ""; // ha uno schema, e non è dei nostri
+  return s; // es. "pagina" — relativo senza barra
+};
+
+/* La posizione del titolo sul foglio, coi suoi limiti morbidi: questi campi
+   non passano dalla validazione dei blocchi, quindi il render si difende da
+   solo — un valore assurdo diventa il default, non una sezione sparita. */
+const nTest = (v: unknown, predefinito: number, min: number, max: number): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : predefinito;
+};
+const stileTestata = testata
+  ? `--x:${nTest(testata.x, 4, -50, 200)};--y:${nTest(testata.y, 4, -50, 400)};` +
+    `--w:${nTest(testata.w, 92, 3, 200)};--h:0` +
+    vestito({ colore: testata.colore, font: testata.font, allinea: testata.allinea, dimensione: (testata as any).dimensione }).stile
+  : "";
+---
+
+<div class="contenitore">
+  <div
+    class={foglio ? "foglio" : "griglia-blocchi"}
+    style={foglio ? `--rap:${numero(altezzaFoglio, 70)}` : undefined}
+  >
+    {foglio && testata && (
+      <div
+        class="cella testata-composta"
+        style={stileTestata}
+        {...(stileTestata.includes("color") || stileTestata.includes("text-align")
+          ? { "data-vestita": "" } : {})}
+        {...(componibile ? { "data-testata": "" } : {})}
+        {...animaAttr((testata as any).anima)}
+      >
+        <h1 {...(componibile ? { "data-campo": "titolo" } : {})}>
+          {pieno(testata.titolo)
+            ? testata.titolo
+            : componibile && <span class="invito">Titolo della pagina</span>}
+        </h1>
+        {(pieno(testata.sottotitolo) || componibile) && (
+          <p class="presentazione" {...(componibile ? { "data-campo": "sottotitolo" } : {})}>
+            {pieno(testata.sottotitolo)
+              ? testata.sottotitolo
+              : componibile && <span class="invito">Doppio clic per il sottotitolo…</span>}
+          </p>
+        )}
+      </div>
+    )}
+    {blocchi.map((b, i) => {
+      const d = b?.dati ?? {};
+      const v = vestito(b);
+      const stile = stileDi(b, i) + v.stile;
+      /* Il numero d'ordine della sezione, per l'editor. Si spande su ogni
+         cella con `{...a}`: senza, andrebbe ripetuto a mano in otto punti, e
+         il nono tipo che si aggiunge sarebbe quello che se lo dimentica —
+         una sezione che non si lascia prendere, senza nessun errore. */
+      const a = componibile
+        ? { "data-blocco": String(i), "data-tipo": b?.tipo, ...v.segno, ...animaAttr(b?.anima) }
+        : { ...v.segno, ...animaAttr(b?.anima) };
+
+      if (b?.tipo === "titolo") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            <div class="riga-misura">
+              <h2 class="blocco-titolo">
+                {pieno(d.testo)
+                  ? d.testo
+                  : componibile && <span class="invito">Doppio clic per il titolo…</span>}
+              </h2>
+            </div>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "testo") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            {pieno(d.html) || !componibile ? (
+              <div class="prosa" set:html={d.html} />
+            ) : (
+              <div class="prosa"><p><span class="invito">Doppio clic per scrivere…</span></p></div>
+            )}
+          </div>
+        );
+      }
+
+      if (b?.tipo === "immagine") {
+        if (!d.immagine?.url) {
+          /* Sul sito una fotografia mai scelta non rende niente, e va bene
+             così. Nell'editor invece deve VEDERSI: una sezione invisibile non
+             si può prendere, spostare, né riempire — e chi l'ha appena
+             aggiunta penserebbe che il pulsante non abbia fatto nulla. */
+          if (!componibile) return null;
+          return (
+            <div class="cella" style={stile} {...a}>
+              <div class="segnaposto-foto">Fotografia da scegliere</div>
+            </div>
+          );
+        }
+        return (
+          <div class="cella" style={stile} {...a}>
+            <figure class="blocco-figura">
+              <img src={d.immagine.url} alt={d.immagine.alt ?? ""} loading="lazy" />
+              {d.didascalia && <figcaption>{d.didascalia}</figcaption>}
+            </figure>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "immagineTesto") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            {/* `destra` sposta l'immagine con l'ordine della griglia, non
+                cambiando l'ordine nel markup: chi legge con uno screen reader e
+                chi guarda da telefono — dove le due colonne diventano una —
+                trovano sempre prima l'immagine e poi il testo. */}
+            <div class={`blocco-affiancato${d.lato === "destra" ? " rovesciato" : ""}`}>
+              {d.immagine?.url && (
+                <img src={d.immagine.url} alt={d.immagine.alt ?? ""} loading="lazy" />
+              )}
+              {pieno(d.html) || !componibile ? (
+                <div class="prosa" set:html={d.html} />
+              ) : (
+                <div class="prosa"><p><span class="invito">Doppio clic per il testo a fianco…</span></p></div>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "elenco") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            <div class="riga-misura">
+              <ul class="materie">{voci(d.voci).map((v) => <li>{v}</li>)}</ul>
+            </div>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "citazione") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            <figure class="blocco-citazione">
+              <blockquote>
+                {pieno(d.testo)
+                  ? d.testo
+                  : componibile && <span class="invito">Doppio clic per la citazione…</span>}
+              </blockquote>
+              {(pieno(d.fonte) || componibile) && (
+                <figcaption>
+                  {pieno(d.fonte)
+                    ? d.fonte
+                    : componibile && <span class="invito">…e qui la fonte</span>}
+                </figcaption>
+              )}
+            </figure>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "collegamento") {
+        /* Il collegamento non rende un <a> vuoto: sul sito un accesso senza
+           testo o senza meta non esiste; nell'editor si vede l'invito. */
+        const href = urlSicuro(d.url);
+        const pronto = pieno(d.testo) && href !== "";
+        if (!pronto && !componibile) return null;
+        return (
+          <div class="cella" style={stile} {...a}>
+            <p class="blocco-collegamento">
+              {pronto ? (
+                <a class={d.aspetto === "riga" ? "" : "bottone"} href={href}>{d.testo}</a>
+              ) : (
+                <span class="invito">Collegamento — scegli testo e destinazione dalla tavolozza</span>
+              )}
+            </p>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "separatore") {
+        /* Il separatore sta sempre su tutta la riga: mezzo separatore in mezzo
+           a una griglia non separa niente, sembra un errore. */
+        return (
+          <div class="cella" style={foglio ? stile : "--span:12"} {...a}>
+            <hr class="blocco-separatore" />
+          </div>
+        );
+      }
+
+      if (b?.tipo === "modulo") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            <div class="modulo-contatto">
+              <h2 class="modulo__titolo">
+                {pieno(d.titolo) ? d.titolo : componibile ? <span class="invito">Doppio clic per il titolo…</span> : "Scrivici"}
+              </h2>
+              {(pieno(d.introduzione) || componibile) && (
+                pieno(d.introduzione)
+                  ? <div class="modulo__intro prosa" set:html={d.introduzione} />
+                  : componibile && <div class="modulo__intro prosa"><p><span class="invito">Doppio clic per il testo introduttivo…</span></p></div>
+              )}
+              {inviato ? (
+                <p class="modulo__grazie">Grazie, il tuo messaggio è partito.</p>
+              ) : (
+                <form class="modulo__form" method="POST" action="/api/contatto">
+                  <input type="hidden" name="pagina" value={percorsoCorrente} />
+                  {/* L'esca anti-spam: nascosta a chi guarda, compilata solo dai robot. */}
+                  <div class="modulo__esca" aria-hidden="true">
+                    <label>Non compilare<input type="text" name="azienda" tabindex="-1" autocomplete="off" /></label>
+                  </div>
+                  {erroreContatto && (
+                    <p class="modulo__errore">{MESSAGGI_ERRORE[erroreContatto] ?? "Qualcosa è andato storto."}</p>
+                  )}
+                  <label class="modulo__campo">Nome<input type="text" name="nome" autocomplete="name" /></label>
+                  <label class="modulo__campo">Email<input type="email" name="email" autocomplete="email" /></label>
+                  <label class="modulo__campo">Messaggio<textarea name="messaggio" rows="5" required></textarea></label>
+                  <button type="submit" class="bottone">Invia</button>
+                </form>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      if (b?.tipo === "forma") {
+        const esa = (v: unknown) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v : "");
+        const tinta = esa(d.tinta) || "var(--accento, #2f4b7c)";
+        const tinta2 = esa(d.tinta2);
+        const forma = ["cerchio", "banda"].includes(d.forma) ? d.forma : "cerchio";
+        const riempi = tinta2 ? `linear-gradient(135deg, ${tinta}, ${tinta2})` : tinta;
+        return (
+          <div class="cella" style={stile} {...a}>
+            <div class={`blocco-forma forma--${forma}`} style={`--tinta:${tinta};--riempi:${riempi}`} aria-hidden="true" />
+          </div>
+        );
+      }
+
+      if (b?.tipo === "html") {
+        return (
+          <div class="cella" style={stile} {...a}>
+            <div class="riga-misura" set:html={d.html} />
+          </div>
+        );
+      }
+
+      /* Un tipo che questo componente non conosce non rende NIENTE, e non è una
+         dimenticanza: meglio una sezione che manca di un errore in mezzo a una
+         pagina pubblica. Nell'editor invece lo stesso blocco si vede, spento e
+         col suo nome, così chi amministra sa che c'è. */
+      return null;
+    })}
+  </div>
+</div>

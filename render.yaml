@@ -1,0 +1,58 @@
+# Blueprint Render — opzionale (inerte se il servizio è stato creato dal form).
+#
+# Web Service Node, non sito statico: l'editor legge e scrive su Neon, verifica
+# un cookie, riceve fotografie e serve /admin e /api. Le pagine pubbliche le
+# serve la rotta acchiappatutto (prerender = false).
+services:
+  - type: web
+    name: studio-legale-ferrante
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    pullRequestPreviewsEnabled: true
+
+    # I valori si mettono dalla scheda Environment del servizio (`sync: false`
+    # = «la variabile esiste, il valore lo metti tu»), così non finiscono nel
+    # repository. SITE_URL è l'indirizzo pubblico vero (es. la URL .onrender.com
+    # del servizio): senza, i link canonici vanno su localhost e i caricamenti
+    # di fotografie rispondono 403 — i due difetti invisibili spiegati in
+    # astro.config.mjs.
+    envVars:
+      - key: SITE_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_SECRET
+        sync: false
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_BUCKET
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      # Solo per bucket con giurisdizione (es. «eu»).
+      - key: R2_JURISDICTION
+        sync: false
+      # Facoltative: la notifica email del modulo di contatto (vedi email.ts).
+      - key: RESEND_API_KEY
+        sync: false
+      - key: CONTACT_TO
+        sync: false
+      - key: CONTACT_FROM
+        sync: false
+
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin

@@ -1,0 +1,295 @@
+---
+/**
+ * Il guscio di OGNI pagina del sito costruito con l'editor.
+ *
+ * Generico: non sa niente di un cliente in particolare. Il nome del sito, il
+ * menu e (in futuro) il tema arrivano dai dati — dalla tabella `sito` e
+ * dall'albero delle pagine — non da un file cablato. È la differenza fra un
+ * sito e un editor di siti.
+ */
+import { menu as leggiMenu, leggiSito } from "../lib/store";
+import { studioDi } from "../lib/contenuti";
+import { CARATTERI } from "../lib/schema";
+import { inglese, traduttore, paginaInglese, piePaginaInglese, sottotitoloInglese, inInglese } from "../lib/lingua";
+import "../styles/global.css";
+
+interface Props {
+  titolo: string;
+  descrizione?: string;
+  immagineSocial?: string;
+  nascosta?: boolean;
+  /** Vero quando la pagina è servita all'EDITOR (compose): gli effetti
+      d'ingresso restano spenti, o comporre vorrebbe dire lavorare su sezioni
+      invisibili finché non si scorre. */
+  componi?: boolean;
+  /** Senza la fascia «Fissare un appuntamento» prima del piè (la pagina
+      Contatti, che è già quella fascia). */
+  senzaInvito?: boolean;
+}
+const { titolo: titoloIt, descrizione: descrizioneIt = "", immagineSocial = "", nascosta = false, componi = false, senzaInvito = false } = Astro.props;
+const en = inglese(Astro);
+const L = traduttore(Astro);
+/* In inglese titolo e descrizione vengono da src/dati/en/pagine.mjs, dove ci
+   sono; il percorso è quello italiano (il middleware ha tolto /en). */
+const qui = Astro.url.pathname.replace(/\/$/, "") || "/";
+const versioneEn = en ? paginaInglese(qui) : null;
+const titolo = versioneEn?.titolo ?? titoloIt;
+const descrizione = versioneEn?.seo?.descrizione ?? descrizioneIt;
+const social = immagineSocial && Astro.site ? new URL(immagineSocial, Astro.site).href : immagineSocial;
+
+const impostazioni = await leggiSito("impostazioni");
+const nomeSito = String(impostazioni.nome ?? "Il mio sito");
+const voci = (await leggiMenu()).map((v) => (en ? { ...v, titolo: paginaInglese(v.percorso)?.titolo ?? v.titolo } : v));
+/* I recapiti del sipario e la fascia finale: i «Dati dello studio». */
+const studio = await studioDi(Astro);
+
+/* ── il TEMA globale ──────────────────────────────────────────────────────
+ * Colori e caratteri decisi una volta per tutto il sito (tabella `sito`,
+ * chiave 'tema'). Non riscrivono global.css: ne sovrascrivono i token, e solo
+ * quelli impostati — così un tema a metà lascia i default al loro posto. Le
+ * variabili si mettono INLINE su <html>, che è l'elemento che `:root` prende
+ * di mira: uno stile inline vince sempre sul foglio, senza dover indovinare in
+ * che ordine il framework mette la <style> e il CSS importato. */
+const tema = await leggiSito("tema");
+const exa = (v: unknown) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v : null);
+const pila = (chiave: unknown) => CARATTERI.find((c) => c.valore === chiave && c.pila)?.pila ?? null;
+/* Lo sfondo della pagina: una tinta o una SFUMATURA fra due colori. Vive in un
+   token suo (`--sfondo`), separato da `--carta` — che resta un colore, perché
+   serve anche come colore del testo su fondi scuri (piè, pulsanti): una
+   sfumatura lì spaccherebbe le scritte. */
+const sfondo =
+  tema.sfondoTipo === "sfumatura" && exa(tema.sfondoDa) && exa(tema.sfondoA)
+    ? `linear-gradient(${Number.isFinite(Number(tema.sfondoAngolo)) ? Number(tema.sfondoAngolo) : 180}deg, ${exa(tema.sfondoDa)}, ${exa(tema.sfondoA)})`
+    : exa(tema.carta);
+
+const variabiliTema = Object.entries({
+  "--accento": exa(tema.accento),
+  /* L'accento «vivo»: i collegamenti e i dettagli piccoli. Di norma è
+     l'accento stesso; un tema scuro lo schiarisce perché regga sul fondo. */
+  "--accento-viva": exa(tema.accentoViva) ?? exa(tema.accento),
+  "--inchiostro": exa(tema.inchiostro),
+  "--carta": exa(tema.carta),
+  "--sfondo": sfondo,
+  "--serif": pila(tema.fontTitoli),
+  "--sans": pila(tema.fontTesto),
+  /* Token secondari: li impostano i temi scuri (i chiari li lasciano ai
+     default di global.css). Senza, un tema scuro avrebbe testata, piè e bordi
+     ancora chiari. */
+  "--carta-2": exa(tema.carta2),
+  "--carta-scura": exa(tema.cartaScura),
+  "--linea": exa(tema.linea),
+  "--linea-forte": exa(tema.lineaForte),
+  "--inchiostro-2": exa(tema.inchiostro2),
+  "--tenue": exa(tema.tenue),
+  "--su-scuro": exa(tema.suScuro),
+})
+  .filter(([, v]) => v)
+  .map(([k, v]) => `${k}:${v}`)
+  .join(";");
+
+/* ── testata e piè di pagina ───────────────────────────────────────────── */
+const layout = await leggiSito("layout");
+const sottotitolo = en ? sottotitoloInglese : String(layout.testataSottotitolo ?? "").trim();
+const piePagina = en ? piePaginaInglese : String(layout.piePagina ?? "").trim();
+const menuAllinea = ["sinistra", "centro", "destra"].includes(layout.menuAllinea as string)
+  ? (layout.menuAllinea as string)
+  : "destra";
+/* La POSIZIONE del menu (accanto al nome o su una riga sotto) e la sua FORMA
+   (linee, pillole, sottolineato, semplice). Con ripiego sui default. */
+const menuPosizione = ["affiancato", "sotto"].includes(layout.menuPosizione as string)
+  ? (layout.menuPosizione as string)
+  : "affiancato";
+const menuForma = ["linee", "pillole", "sottolineato", "semplice"].includes(layout.menuForma as string)
+  ? (layout.menuForma as string)
+  : "linee";
+
+/* Il marchio: se il nome finisce con una sigla puntata («… G.D.D.»), la
+   sigla si scrive grande e i punti prendono l'accento, come nell'anticamera. */
+const sigla = nomeSito.match(/^(.*?)\s*((?:[A-Z]\.){2,})$/);
+const marchio = sigla ? { prima: sigla[1], lettere: sigla[2].split(".").filter(Boolean) } : null;
+const principali = voci.filter((v) => v.percorso !== "/en");
+const aperta = (p: string) => qui === p || qui.startsWith(p + "/");
+
+const titoloCompleto = titolo === nomeSito ? titolo : `${titolo} — ${nomeSito}`;
+const indirizzoIt = qui;
+const indirizzoEn = inInglese(qui);
+const assoluto = (p: string) => (Astro.site ? new URL(p, Astro.site).href : undefined);
+const canonico = assoluto(en ? indirizzoEn : indirizzoIt);
+const annoOra = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang={en ? "en" : "it"} style={variabiliTema || undefined}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{titoloCompleto}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    {descrizione && <meta name="description" content={descrizione} />}
+    {canonico && <link rel="canonical" href={canonico} />}
+    {nascosta && <meta name="robots" content="noindex, follow" />}
+    {!nascosta && assoluto(indirizzoIt) && <link rel="alternate" hreflang="it" href={assoluto(indirizzoIt)} />}
+    {!nascosta && assoluto(indirizzoEn) && <link rel="alternate" hreflang="en" href={assoluto(indirizzoEn)} />}
+    {!nascosta && assoluto(indirizzoIt) && <link rel="alternate" hreflang="x-default" href={assoluto(indirizzoIt)} />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content={en ? "en_GB" : "it_IT"} />
+    <meta property="og:site_name" content={nomeSito} />
+    <meta property="og:title" content={titoloCompleto} />
+    {descrizione && <meta property="og:description" content={descrizione} />}
+    {canonico && <meta property="og:url" content={canonico} />}
+    {social && <meta property="og:image" content={social} />}
+    {social && <meta name="twitter:card" content="summary_large_image" />}
+
+    {/* I caratteri fra cui l'editor fa scegliere. Il foglio di stile li
+        ELENCA soltanto: il file di un font scende solo quando una pagina lo
+        usa. Le chiavi e le pile stanno in src/lib/schema.ts (CARATTERI). */}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Playfair+Display:wght@400;600;700&family=Lora:wght@400;600&family=Merriweather:wght@400;700&family=EB+Garamond:wght@400;600&family=Cormorant+Garamond:wght@400;600&family=Montserrat:wght@400;600&family=Work+Sans:wght@400;600&display=swap"
+    />
+  </head>
+
+  <body>
+    <a class="salta" href="#contenuto">{L("Salta al contenuto", "Skip to content")}</a>
+    <header class="barra" data-barra>
+      <a class="barra__marchio" href="/" aria-label={`${nomeSito}: ${L("pagina iniziale", "home page")}`}>
+        {marchio ? (
+          <>
+            <span class="barra__sigla">{marchio.lettere.map((l) => <>{l}<i>.</i></>)}</span>
+            <span class="barra__studio">{marchio.prima}{sottotitolo && <em>{sottotitolo}</em>}</span>
+          </>
+        ) : (
+          <span class="barra__studio">{nomeSito}{sottotitolo && <em>{sottotitolo}</em>}</span>
+        )}
+      </a>
+      <nav class="barra__voci" aria-label={L("Menu principale", "Main menu")}>
+        {principali.map((v) => (
+          <a href={v.percorso} aria-current={aperta(v.percorso) ? "page" : undefined}>{v.titolo}</a>
+        ))}
+      </nav>
+      <div class="barra__destra">
+        <nav class="lingue" aria-label={L("Lingua", "Language")}>
+          <a href={indirizzoIt} hreflang="it" lang="it" aria-current={en ? undefined : "true"}>IT</a>
+          <a href={indirizzoEn} hreflang="en" lang="en" aria-current={en ? "true" : undefined}>EN</a>
+        </nav>
+        <a class="barra__invito" href="/contatti">{L("Appuntamento", "Appointment")}</a>
+        <button class="barra__menu" type="button" aria-expanded="false" aria-controls="sipario" data-apri-sipario>
+          <span class="barra__menu-testo">Menu</span><span class="barra__menu-linee" aria-hidden="true"><i></i><i></i></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Il sipario: il menu a tutto schermo, voci numerate e recapiti. -->
+    <div class="sipario" id="sipario" hidden>
+      <nav class="sipario__voci" aria-label={L("Menu del sito", "Site menu")}>
+        <ol>
+          {principali.map((v, i) => (
+            <li style={`--i:${i}`}>
+              <a href={v.percorso} aria-current={aperta(v.percorso) ? "page" : undefined}>
+                <span class="sipario__num">{String(i + 1).padStart(2, "0")}</span>{v.titolo}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <aside class="sipario__recapiti">
+        <p class="sipario__etichetta">{L("Lo studio", "The firm")}</p>
+        <p>{studio.via}<br />{studio.cap} {studio.citta}</p>
+        <p class="sipario__etichetta">{L("Recapiti", "Contacts")}</p>
+        <p><a href={studio.telefonoLink}>{studio.telefono}</a><br /><a href={studio.cellulareLink}>{studio.cellulare}</a></p>
+        <p class="sipario__etichetta">{L("Si riceve", "Office hours")}</p>
+        <p>{L("Su appuntamento", "By appointment")}<br />{studio.orari}</p>
+        {en
+          ? <p><a href={indirizzoIt} hreflang="it" lang="it">Versione italiana →</a></p>
+          : <p><a href={indirizzoEn} hreflang="en" lang="en">English version →</a></p>}
+      </aside>
+    </div>
+    <main id="contenuto">
+      <slot />
+    </main>
+    {!senzaInvito && (
+      <section class="invito-finale" data-anima="sali">
+        <p class="invito-finale__etichetta">{studio.invitoEtichetta}</p>
+        <p class="invito-finale__frase">{studio.invitoFrase}</p>
+        <a class="bottone" href="/contatti">{studio.invitoBottone}</a>
+      </section>
+    )}
+    <footer class="piede">
+      <div class="contenitore">
+        <div class="piede__capo">
+          {marchio ? <span class="piede__sigla">{marchio.lettere.map((l) => <>{l}<i>.</i></>)}</span> : <span class="piede__sigla">{nomeSito}</span>}
+        </div>
+        {piePagina ? (
+          <div class="prosa" set:html={piePagina} />
+        ) : (
+          <p>© {annoOra} {nomeSito}</p>
+        )}
+      </div>
+    </footer>
+    {/* Gli effetti d'ingresso: solo sul sito pubblico, non nell'editor. Lo
+        script accende `.js` (senza JS i contenuti restano visibili) e rivela le
+        sezioni `[data-anima]` quando entrano nello schermo. */}
+    {!componi && (
+      <script is:inline>
+        document.documentElement.classList.add("js");
+        /* Sul telefono i testi lunghi segnati con data-riassumi mostrano
+           l'inizio e un pulsante per leggerli tutti. */
+        addEventListener("DOMContentLoaded", function () {
+          if (!matchMedia("(max-width: 760px)").matches) return;
+          document.querySelectorAll("[data-riassumi]").forEach(function (n) {
+            if (n.scrollHeight < 400) return;
+            n.classList.add("riassunto");
+            var b = document.createElement("button");
+            b.type = "button";
+            b.className = "riassumi__bottone";
+            b.textContent = n.dataset.riassumi;
+            b.setAttribute("aria-expanded", "false");
+            b.addEventListener("click", function () {
+              var aperto = n.classList.toggle("aperto");
+              b.setAttribute("aria-expanded", String(aperto));
+              b.textContent = aperto ? (document.documentElement.lang === "en" ? "Close" : "Chiudi") : n.dataset.riassumi;
+              if (!aperto) n.scrollIntoView({ block: "center" });
+            });
+            n.after(b);
+          });
+        });
+        /* Il sipario si apre e si chiude (anche con Esc). */
+        addEventListener("DOMContentLoaded", function () {
+          var barra = document.querySelector("[data-barra]");
+          var sip = document.getElementById("sipario");
+          var bot = document.querySelector("[data-apri-sipario]");
+          if (!barra) return;
+          var chiudi = function () {
+            document.documentElement.classList.remove("sipario-aperto");
+            bot.setAttribute("aria-expanded", "false");
+            setTimeout(function () { if (bot.getAttribute("aria-expanded") === "false") sip.hidden = true; }, 500);
+          };
+          bot.addEventListener("click", function () {
+            if (bot.getAttribute("aria-expanded") === "true") return chiudi();
+            sip.hidden = false;
+            requestAnimationFrame(function () { requestAnimationFrame(function () { document.documentElement.classList.add("sipario-aperto"); }); });
+            bot.setAttribute("aria-expanded", "true");
+          });
+          addEventListener("keydown", function (e) { if (e.key === "Escape" && bot.getAttribute("aria-expanded") === "true") { chiudi(); bot.focus(); } });
+        });
+        addEventListener("DOMContentLoaded", function () {
+          var io = new IntersectionObserver(
+            function (voci) {
+              voci.forEach(function (v) {
+                if (v.isIntersecting) { v.target.classList.add("visibile"); io.unobserve(v.target); }
+              });
+            },
+            { threshold: 0.12, rootMargin: "0px 0px -8% 0px" },
+          );
+          /* Sulle pagine a foglio ogni sezione senza un effetto suo sale
+             allo scorrimento, come nell'anticamera. */
+          document.querySelectorAll(".foglio > .cella:not([data-anima]):not(:has(img))").forEach(function (n) { n.setAttribute("data-anima", "sali"); });
+          document.querySelectorAll("[data-anima]").forEach(function (n) { io.observe(n); });
+        });
+      </script>
+    )}
+  </body>
+</html>

@@ -1,0 +1,32 @@
+# Dipendenze e prodotti della build: si ricostruiscono da package-lock.json e
+# dai sorgenti, e in un repository non fanno che pesare e generare conflitti.
+node_modules/
+dist/
+
+# La cartella di lavoro di Astro: tipi generati e cache del contenuto.
+.astro/
+
+# I segreti non entrano MAI nel repository. `.env.example` sì — è il modello
+# senza valori, e serve a chi installa per sapere cosa deve procurarsi.
+.env
+.env.*
+!.env.example
+
+# Sistema operativo ed editor.
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+
+# Prodotti di `npm run esporta` e `npm run espelli`.
+esportato/
+espulso/
+
+# I materiali consegnati dallo studio (curricula, foto, questionario
+# compilato): dati personali, restano fuori dal repository.
+docs/questionario/wetransfer_*/
+docs/questionario/CURRICULUM_*
+docs/questionario/CV *
+docs/questionario/UQa*

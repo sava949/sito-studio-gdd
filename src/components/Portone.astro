@@ -1,0 +1,219 @@
+---
+/**
+ * Il portone di Via della Balduina 107.
+ *
+ * Solo il serramento, ricalcato dalla fotografia (viewBox 520×554, con un
+ * margine vuoto in alto per la sfumatura): il telaio in ferro scuro con le
+ * vetrate laterali e le sbarre, il civico 107 sulla traversa in alto, l'anta
+ * rossa e il gradino di travertino. L'anta e le vetrate sono i pezzi veri
+ * della fotografia, raddrizzati da strumenti/ritaglia-porta.mjs (public/porta/).
+ *
+ * L'anta è un elemento a parte, sopra il vano illuminato, perché si deve
+ * APRIRE (rotazione 3D sui cardini a sinistra): la regia sta in index.astro.
+ */
+
+const vetro = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
+const VETRI = [vetro(22, 44, 108, 458), vetro(390, 44, 108, 458)];
+---
+
+<div class="portone">
+  <svg class="portone__fondo" viewBox="0 -20 520 554" preserveAspectRatio="none" aria-hidden="true">
+    <defs>
+      <linearGradient id="p-telaio" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#454b52" /><stop offset="1" stop-color="#2a2e33" />
+      </linearGradient>
+      <linearGradient id="p-traversa" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#4a5057" /><stop offset=".5" stop-color="#363b41" /><stop offset="1" stop-color="#2b2f34" />
+      </linearGradient>
+      <linearGradient id="p-vetro" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#2f3539" /><stop offset=".45" stop-color="#3b3a35" /><stop offset="1" stop-color="#23272a" />
+      </linearGradient>
+      <linearGradient id="p-riflesso" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#fff" stop-opacity="0" /><stop offset=".5" stop-color="#fff" stop-opacity=".09" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+      </linearGradient>
+      <linearGradient id="p-acciaio-civico" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f1f3f5" /><stop offset=".55" stop-color="#b9bfc5" /><stop offset="1" stop-color="#8a9097" />
+      </linearGradient>
+      <linearGradient id="p-travertino" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#b8ae9b" /><stop offset="1" stop-color="#998f7e" />
+      </linearGradient>
+      <filter id="p-travertino-tex" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency=".012 .35" numOctaves="3" seed="5" />
+        <feColorMatrix values="0 0 0 0 .35  0 0 0 0 .3  0 0 0 0 .24  0 0 0 -1.8 1.1" />
+      </filter>
+      <linearGradient id="p-ombra-alto" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#000" stop-opacity=".55" /><stop offset="1" stop-color="#000" stop-opacity="0" />
+      </linearGradient>
+      <clipPath id="p-gradino"><polygon points="4,500 516,500 520,518 520,534 0,534 0,518" /></clipPath>
+      <filter id="p-sfuma"><feGaussianBlur stdDeviation="5" /></filter>
+      <filter id="p-rilievo" x="-20%" y="-40%" width="140%" height="180%">
+        <feDropShadow dx=".8" dy="1.4" stdDeviation=".8" flood-color="#000" flood-opacity=".75" />
+      </filter>
+    </defs>
+
+    <!-- il telaio in ferro, con la grana del metallo verniciato -->
+    <rect x="8" y="8" width="504" height="496" fill="#111316" />
+    <rect x="10" y="10" width="500" height="492" fill="url(#p-telaio)" />
+    <rect x="10" y="10" width="500" height="1.4" fill="#7a8087" opacity=".6" />
+    <rect x="10" y="10" width="1.4" height="492" fill="#7a8087" opacity=".35" />
+
+    <!-- le vetrate laterali: i vetri e le sbarre veri, dalla fotografia -->
+    {VETRI.map((v, i) => (
+      <g>
+        <image href={i ? "/porta/destra.webp" : "/porta/sinistra.webp"} x={v.x} y={v.y} width={v.w} height={v.h} preserveAspectRatio="none" />
+        <rect x={v.x} y={v.y} width={v.w} height="4" fill="#000" opacity=".5" />
+        <rect x={v.x} y={v.y} width="3" height={v.h} fill="#000" opacity=".35" />
+      </g>
+    ))}
+
+    <!-- la traversa in alto, con il civico in metallo -->
+    <rect x="10" y="10" width="500" height="34" fill="url(#p-traversa)" />
+    <rect x="10" y="10" width="500" height="1" fill="#7a8087" opacity=".6" />
+    <rect x="10" y="43" width="500" height="1" fill="#0d0f11" />
+    <text x="260" y="35" text-anchor="middle" class="civico" fill="url(#p-acciaio-civico)" filter="url(#p-rilievo)">107</text>
+
+    <!-- il vano dell'anta e la luce che filtra sotto -->
+    <rect x="142" y="44" width="236" height="458" fill="#0d0f11" />
+    <!-- il telaio fisso dell'anta, in ferro come l'inferriata: montanti,
+         traverso e la battuta in ombra dove l'anta si appoggia -->
+    <rect x="142" y="44" width="8" height="458" fill="url(#p-telaio)" />
+    <rect x="370" y="44" width="8" height="458" fill="url(#p-telaio)" />
+    <rect x="142" y="44" width="236" height="8" fill="url(#p-traversa)" />
+    <rect x="142" y="44" width="1" height="458" fill="#7a8087" opacity=".45" />
+    <rect x="370" y="44" width="1" height="458" fill="#7a8087" opacity=".45" />
+    <rect x="149" y="51" width="1.4" height="451" fill="#07080a" />
+    <rect x="369" y="51" width="1.4" height="451" fill="#07080a" />
+    <rect x="149" y="51" width="222" height="1.4" fill="#07080a" />
+    <rect x="146" y="498" width="228" height="3" fill="#f6dfaa" opacity=".8" />
+
+    <!-- il gradino di travertino -->
+    <g clip-path="url(#p-gradino)">
+      <rect x="0" y="498" width="520" height="40" fill="url(#p-travertino)" />
+      <rect x="0" y="498" width="520" height="40" filter="url(#p-travertino-tex)" opacity=".8" />
+      <rect x="0" y="518" width="520" height="16" fill="#000" opacity=".28" />
+      <rect x="0" y="517.5" width="520" height="1.3" fill="#fff" opacity=".35" />
+      <rect x="0" y="500" width="520" height="9" fill="url(#p-ombra-alto)" />
+      <ellipse cx="260" cy="506" rx="130" ry="8" fill="#f3d9a0" opacity=".2" filter="url(#p-sfuma)" />
+    </g>
+  </svg>
+
+  <!-- Dietro la porta: solo luce. -->
+  <div class="portone__luce"></div>
+
+  <!-- L'anta è un SOLIDO: fronte (la foto vera), retro, due fianchi, testa e
+       piede, montati in 3D. La faccia esterna sta sul piano dell'inferriata e
+       lo spessore va verso l'interno; l'asse di rotazione è sulla faccia
+       interna, così aprendosi il fianco dei cardini viene verso chi guarda. -->
+  <div class="anta"><div class="anta__corpo">
+    <div class="anta__faccia anta__fronte">
+      <img src="/porta/anta.webp" alt="" width="880" height="1800" fetchpriority="high" />
+      <span class="anta__ombra"></span>
+      <span class="pomolo"></span>
+      <span class="serratura"></span>
+    </div>
+    <div class="anta__faccia anta__retro"></div>
+    <div class="anta__faccia anta__fianco anta__fianco--libero"></div>
+    <div class="anta__faccia anta__fianco anta__fianco--cardini"></div>
+    <div class="anta__faccia anta__testa anta__testa--su"></div>
+    <div class="anta__faccia anta__testa anta__testa--giu"></div>
+  </div></div>
+</div>
+
+<style>
+  .portone { position: relative; width: 100%; height: 100%; perspective: 1000px; perspective-origin: 50% 40%; }
+  .portone__fondo { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .civico { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: 22px; letter-spacing: 3px; }
+  /* La luce del vano e l'anta, dentro il telaio fisso (150,72 · 220×450 su 520×554). */
+  .portone__luce, .anta { position: absolute; left: 28.85%; top: 13%; width: 42.31%; height: 81.23%; }
+  .portone__luce {
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 45%, #ffffff 0%, #fff6e2 35%, rgba(255, 238, 205, 0) 75%),
+      linear-gradient(180deg, #f2dfb8, #fbf0da 45%, #f4e3c1);
+  }
+  /* L'alone della luce è già disegnato, spento: accenderlo è solo cambiare
+     un'opacità (lo fa la scheda grafica), non ridisegnare un'ombra a ogni
+     fotogramma. Lo stesso per l'anta che si scurisce aprendosi. */
+  .portone__luce::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    box-shadow: 0 0 120px 30px rgba(243, 220, 170, .5); opacity: 0; transition: opacity 1s;
+  }
+  .anta__fronte::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: #000; opacity: 0; transition: opacity 1.2s;
+  }
+  /* Lo spessore del battente: 6 centesimi della sua larghezza (≈ 6–7 cm su
+     90), in unità del contenitore perché valga anche per translateZ. */
+  .anta { container-type: size; --sp: 6cqw; transform-style: preserve-3d; }
+  /* Il corpo ruota sull'asse dei cardini, sulla faccia interna (z = -sp). */
+  .anta__corpo {
+    position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: left center calc(var(--sp) * -1);
+    transition: transform .9s cubic-bezier(.55, 0, .25, 1);
+  }
+  .anta__faccia { position: absolute; }
+  /* Il fondo rosso sta sotto la fotografia: finché quella non è arrivata la
+     porta è già rossa, e non si vede la luce bianca del vano. */
+  .anta__fronte {
+    inset: 0; backface-visibility: hidden;
+    background: linear-gradient(90deg, #c4000d, #d6000f 55%, #c9000f);
+  }
+  /* Il pomolo in acciaio satinato, al centro: una rosetta a filo della porta
+     e il fungo sopra. Sta sul piano dell'anta, dipinto con lei: come solido a
+     parte costava uno scatto all'inizio dell'ingresso. */
+  .pomolo {
+    position: absolute; left: 49.1%; top: 47.6%; width: 9.2cqw; height: 9.2cqw; margin: -4.6cqw 0 0 -4.6cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #d9dde1, #9aa0a6 60%, #5d6369);
+    box-shadow: .5cqw .9cqw 1.2cqw rgba(60, 0, 0, .55), inset 0 0 0 .35cqw rgba(255, 255, 255, .25);
+  }
+  .pomolo::after {
+    content: ""; position: absolute; inset: 1cqw; border-radius: 50%;
+    background:
+      radial-gradient(circle at 34% 28%, #ffffff 0 7%, rgba(255, 255, 255, 0) 22%),
+      radial-gradient(circle at 42% 38%, #eef0f2, #b9bec4 45%, #7b8187 78%, #4d5358);
+    box-shadow: .9cqw 1.6cqw 1.8cqw rgba(50, 0, 0, .5), inset -.5cqw -.7cqw 1cqw rgba(0, 0, 0, .28);
+  }
+  /* Il cilindro della serratura, sul montante: bocchetta tonda in acciaio,
+     anello interno e la feritoia della chiave. */
+  .serratura {
+    position: absolute; left: 94.1%; top: 51.6%; width: 7.4cqw; height: 7.4cqw; margin: -3.7cqw 0 0 -3.7cqw;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #f4f5f6, #b4b9be 50%, #6e747a);
+    box-shadow: .3cqw .6cqw .9cqw rgba(60, 0, 0, .5), inset -.3cqw -.4cqw .6cqw rgba(0, 0, 0, .3);
+  }
+  .serratura::before {
+    content: ""; position: absolute; inset: 1.5cqw; border-radius: 50%;
+    background: radial-gradient(circle at 60% 65%, #eceef0, #a3a9af 60%, #6a7076);
+    box-shadow: inset .3cqw .4cqw .6cqw rgba(0, 0, 0, .45);
+  }
+  .serratura::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: .9cqw; height: 2.6cqw; margin: -1.3cqw 0 0 -.45cqw;
+    border-radius: .45cqw; background: #2a2d31; box-shadow: 0 .2cqw 0 rgba(255, 255, 255, .5);
+  }
+  .anta__fronte img { display: block; width: 100%; height: 100%; }
+  /* L'ombra del portico in alto e un filo scuro sul lato dei cardini. */
+  .anta__ombra {
+    position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(0, 0, 0, .28), transparent 22%, transparent 88%, rgba(0, 0, 0, .18)),
+      linear-gradient(90deg, rgba(0, 0, 0, .25), transparent 4%);
+  }
+  /* Il retro, rivolto all'atrio illuminato. */
+  .anta__retro {
+    inset: 0; transform: translateZ(calc(var(--sp) * -1)) rotateY(180deg); backface-visibility: hidden;
+    background: linear-gradient(90deg, #a8121a, #c8141e 55%, #9c0f17);
+  }
+  /* I fianchi: quello dei cardini (che si vede aprendo) e quello libero. */
+  .anta__fianco { top: 0; height: 100%; width: var(--sp); }
+  .anta__fianco--cardini {
+    left: 0; transform-origin: left center; transform: rotateY(90deg);
+    background: linear-gradient(90deg, #9a0f17, #c41a23 45%, #a3121a);
+  }
+  .anta__fianco--libero {
+    right: 0; transform-origin: right center; transform: rotateY(-90deg);
+    background: linear-gradient(90deg, #5e060b, #8d0c13);
+  }
+  /* Testa e piede. */
+  .anta__testa { left: 0; width: 100%; height: var(--sp); }
+  .anta__testa--su { top: 0; transform-origin: center top; transform: rotateX(-90deg); background: #5a070c; }
+  .anta__testa--giu { bottom: 0; transform-origin: center bottom; transform: rotateX(90deg); background: #3e0508; }
+</style>

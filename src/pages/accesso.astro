@@ -1,0 +1,68 @@
+---
+/*
+ * La pagina di ACCESSO: un campo dove incollare (o digitare) la propria chiave
+ * di accesso — il «token fisso» — invece di usare ogni volta il collegamento
+ * riservato `?t=…`. Il token resta lo stesso; qui lo si scambia con un cookie
+ * di sessione (vedi src/pages/api/accesso.ts).
+ *
+ * È pubblica (fuori da /admin, così il middleware non la blocca): mostra solo
+ * un modulo, nessun dato. Il freno ai tentativi sta nell'endpoint.
+ */
+export const prerender = false;
+const errore = Astro.url.searchParams.get("errore");
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accesso</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        background: #f6f7f8; color: #17222a;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        padding: 1.5rem;
+      }
+      .accesso {
+        width: 100%; max-width: 24rem; background: #fff; border: 1px solid #dfe3e6;
+        border-radius: 12px; padding: 1.8rem 1.6rem; box-shadow: 0 10px 30px rgb(0 0 0 / 0.06);
+      }
+      .accesso h1 { font-size: 1.3rem; margin: 0 0 0.3rem; font-weight: 600; }
+      .accesso p { margin: 0 0 1.2rem; color: #5f6f7a; font-size: 0.92rem; line-height: 1.5; }
+      .accesso label { display: block; font-size: 0.85rem; color: #17222a; margin-bottom: 0.35rem; }
+      .accesso input {
+        width: 100%; font: inherit; padding: 0.6rem 0.7rem; border: 1px solid #dfe3e6;
+        border-radius: 8px; background: #fff;
+      }
+      .accesso input:focus { outline: 2px solid #2f4b7c; outline-offset: 1px; border-color: #2f4b7c; }
+      .accesso button {
+        margin-top: 1rem; width: 100%; border: 0; border-radius: 8px; cursor: pointer;
+        background: #2f4b7c; color: #fff; padding: 0.65rem; font: inherit; font-size: 1rem;
+      }
+      .accesso button:hover { filter: brightness(1.08); }
+      .accesso__errore {
+        background: #fbeaea; color: #7a2f2f; border: 1px solid #e3bcbc;
+        border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.9rem; margin-bottom: 1rem;
+      }
+      .accesso__nota { font-size: 0.8rem; color: #8a97a1; margin: 0.9rem 0 0; }
+    </style>
+  </head>
+  <body>
+    <main class="accesso">
+      <h1>Accesso</h1>
+      <p>Inserisci la tua chiave per entrare nella gestione del sito.</p>
+      {errore && <p class="accesso__errore">Chiave non valida o troppi tentativi. Riprova fra qualche minuto.</p>}
+      <form method="POST" action="/api/accesso">
+        <label for="token">Chiave di accesso</label>
+        <input id="token" name="token" type="password" autocomplete="current-password" autofocus required />
+        <button type="submit">Entra</button>
+      </form>
+      <p class="accesso__nota">La chiave resta la stessa; qui la si scambia con una sessione che dura un mese. «Esci» la chiude subito. Il browser può ricordare la chiave per te.</p>
+    </main>
+  </body>
+</html>

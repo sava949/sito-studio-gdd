@@ -1,0 +1,65 @@
+---
+/*
+ * La scocca dell'area di gestione: elementi vuoti che `editor.js` riempie.
+ *
+ * Qui non c'è niente di questo sito in particolare: l'editor legge
+ * `/api/admin/schema` e l'albero delle pagine da `/api/admin/pagine`, e
+ * costruisce l'interfaccia da quelli. È la proprietà che permette di riusare
+ * editor.js/editor.css su un altro progetto senza toccarli.
+ *
+ * Non usa il layout `Base.astro` del sito pubblico, di proposito: il pannello
+ * deve somigliare a un programma, non alla home page.
+ */
+export const prerender = false;
+---
+
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestione del sito</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/admin/editor.css" />
+  </head>
+
+  <body>
+    <div class="telaio">
+      <header class="barra">
+        <span class="barra__nome" id="nome-sito">Gestione</span>
+        <div class="barra__destra">
+          <span class="segno-bozza" id="stato-bozza" hidden>modifiche non pubblicate</span>
+          <span id="stato-salvataggio"></span>
+          <button type="button" id="esci" class="collegamento-azione">Esci</button>
+        </div>
+      </header>
+
+      {/* La mappa del sito: l'albero delle pagine. Da qui si crea, si annida,
+          si mette nel menu, si apre in composizione. La riempie `editor.js`. */}
+      <nav class="menu" id="albero" aria-label="Mappa del sito"></nav>
+
+      <main class="centro">
+        <div class="intestazione-schermata">
+          <div>
+            <h1 id="titolo-schermata">Il tuo sito</h1>
+            <p class="aiuto" id="descrizione-schermata">
+              Scegli una pagina dalla mappa a sinistra per comporla, oppure
+              creane una nuova. «Pubblica» la manda online.
+            </p>
+          </div>
+        </div>
+        <div id="contenuto"></div>
+      </main>
+
+      {/* L'anteprima è un `iframe` sulla pagina pubblica vera in modalità
+          composizione (`?componi=1`), non una simulazione: quello che si vede
+          è esattamente quello che vedrà chi visita il sito. */}
+      <iframe id="anteprima" title="Anteprima della pagina" hidden></iframe>
+    </div>
+
+    <div class="avviso" id="avviso" role="status" aria-live="polite"></div>
+
+    <script type="module" src="/admin/editor.js"></script>
+  </body>
+</html>

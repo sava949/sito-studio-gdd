@@ -1,0 +1,12 @@
+---
+/**
+ * Il contenuto della pagina in JSON, per l'editor: c'è solo in composizione.
+ * editor.js lo legge al caricamento dell'anteprima (vedi src/lib/contenuti.ts).
+ */
+import { perEditor } from "../lib/contenuti";
+
+interface Props { c: unknown; componi: boolean }
+const { c, componi } = Astro.props;
+---
+
+{componi && <script type="application/json" id="contenuto-pagina" set:html={perEditor(c)} />}

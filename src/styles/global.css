@@ -1,0 +1,1024 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Stile del sito PUBBLICO prodotto dall'editor — token e regole.
+   ═══════════════════════════════════════════════════════════════════
+
+   Un foglio solo: i token (colori, caratteri, misure) stanno in :root e li
+   sovrascrive il TEMA scelto nell'editor (vedi Base.astro). Da qui in giù
+   sono le regole di testata, tipografia, foglio a blocchi, forme e piè.
+
+   Quasi nessun JavaScript sul sito pubblico: la pagina si apre su qualunque
+   cosa e regge negli anni. L'unico script è la comparsa allo scorrimento
+   degli effetti d'ingresso (Base.astro), che è un miglioramento progressivo:
+   senza JS i contenuti restano visibili.
+*/
+
+/* ─────────────────────────────────────────────────────────── token */
+:root {
+  /* I colori. Carta calda e non bianco puro: uno studio legale non è una
+     clinica, e il bianco assoluto su schermo affatica in lettura lunga. */
+  --carta:        #fcfbf9;
+  --carta-2:      #f5f2ec;
+  --carta-scura:  #1b2431;
+
+  --inchiostro:   #17202e;
+  --inchiostro-2: #4b5768;
+  --tenue:        #6f7b8c;
+
+  --linea:        #e4ded4;
+  --linea-forte:  #cfc6b7;
+
+  /* Ottone spento. Un accento caldo e sobrio: l'oro acceso su un sito di
+     avvocati scivola nel pacchiano, il blu è la scelta di tutti. */
+  --accento:      #7c5c2b;
+  --accento-viva: #9c7538;
+  --su-scuro:     #d8c9ab;
+
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* La misura: la larghezza del testo. 68 caratteri è la riga che si legge
+     senza perdere il capo — più larga e l'occhio sbaglia riga tornando a
+     sinistra, che su testi lunghi è esattamente il difetto da evitare. */
+  --misura: 68ch;
+  --largo: 1120px;
+  --stretto: 760px;
+
+  --stacco: clamp(3.5rem, 7vw, 6.5rem);
+}
+
+/* ──────────────────────────────────────────────────────── azzerata */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+body {
+  margin: 0;
+  /* Lo sfondo può essere una tinta o una sfumatura (token `--sfondo`); se non
+     è impostato, vale la carta. `--carta` resta un colore per gli usi come
+     colore del testo (piè, pulsanti). */
+  background: var(--sfondo, var(--carta));
+  color: var(--inchiostro);
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+img { max-width: 100%; height: auto; display: block; }
+
+/* ───────────────────────────────────────────────────── tipografia */
+h1, h2, h3, h4 {
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.18;
+  letter-spacing: -.015em;
+  margin: 0 0 .6em;
+  text-wrap: balance;
+}
+
+h1 { font-size: clamp(2.1rem, 5.2vw, 3.4rem); }
+h2 { font-size: clamp(1.55rem, 3.2vw, 2.1rem); }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1.0625rem; font-family: var(--sans); font-weight: 600; }
+
+p { margin: 0 0 1.2em; }
+p:last-child { margin-bottom: 0; }
+
+a {
+  color: var(--accento);
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+}
+a:hover { color: var(--accento-viva); }
+
+/* Il fuoco si vede SEMPRE, e non si toglie mai. Chi naviga da tastiera —
+   per abitudine o perché non può fare altrimenti — senza questo non sa
+   dove si trova. */
+:focus-visible {
+  outline: 2px solid var(--accento);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+strong { font-weight: 600; }
+
+/* Il salto al contenuto: invisibile finché non lo si raggiunge col tab. */
+.salta {
+  position: absolute; left: 50%; top: 0; transform: translate(-50%, -110%);
+  background: var(--inchiostro); color: var(--carta);
+  padding: .7rem 1.2rem; border-radius: 0 0 6px 6px;
+  font-size: .95rem; text-decoration: none; z-index: 50;
+  transition: transform .16s;
+}
+.salta:focus { transform: translate(-50%, 0); color: var(--carta); }
+
+/* ─────────────────────────────────────────────────────── impianto */
+.contenitore {
+  width: 100%;
+  max-width: var(--largo);
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 5vw, 2.5rem);
+}
+.contenitore.stretto { max-width: var(--stretto); }
+
+main { display: block; }
+
+.sezione { padding-block: var(--stacco); }
+.sezione + .sezione { padding-top: 0; }
+.sezione.scura {
+  background: var(--carta-scura);
+  color: var(--carta);
+  padding-block: var(--stacco);
+}
+.sezione.scura h2, .sezione.scura h3 { color: var(--carta); }
+.sezione.scura a { color: var(--su-scuro); }
+
+.riga-misura { max-width: var(--misura); }
+
+/* Il filetto che apre una sezione: due centimetri di ottone, e basta. */
+.filetto {
+  display: block; width: 3rem; height: 2px;
+  background: var(--accento); border: none; margin: 0 0 1.6rem;
+}
+
+.occhiello {
+  display: block;
+  font-family: var(--sans); font-size: .78rem; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--tenue); margin-bottom: .9rem;
+}
+.scura .occhiello { color: var(--su-scuro); }
+
+/* ──────────────────────────────────────────────────────── testata */
+.testata {
+  border-bottom: 1px solid var(--linea);
+  background: var(--carta);
+}
+.testata .contenitore {
+  display: flex; align-items: center; gap: 1.5rem;
+  flex-wrap: wrap; padding-block: 1.15rem;
+}
+
+.marchio {
+  font-family: var(--serif); font-size: 1.28rem; font-weight: 600;
+  letter-spacing: -.01em; color: var(--inchiostro); text-decoration: none;
+  line-height: 1.2;
+}
+.marchio:hover { color: var(--inchiostro); }
+.marchio span {
+  display: block; font-family: var(--sans); font-size: .72rem; font-weight: 500;
+  letter-spacing: .15em; text-transform: uppercase; color: var(--tenue);
+  margin-top: .18rem;
+}
+
+.navigazione { margin-left: auto; }
+/* L'allineamento del menu nella testata: a destra (predefinito), al centro o
+   a sinistra accanto al nome. Deciso da «Aspetto del sito» (layout.menuAllinea). */
+.testata--menu-destra .navigazione { margin-left: auto; }
+.testata--menu-centro .navigazione { margin-inline: auto; }
+.testata--menu-sinistra .navigazione { margin-left: 1.75rem; margin-right: auto; }
+
+/* Posizione: menu SOTTO il nome, su una riga a sé (l'allineamento decide dove). */
+.testata--pos-sotto .testata__riga { flex-direction: column; align-items: stretch; gap: 0.7rem; }
+.testata--pos-sotto .navigazione { margin: 0; }
+.testata--pos-sotto .navigazione ul { justify-content: flex-end; }
+.testata--pos-sotto.testata--menu-sinistra .navigazione ul { justify-content: flex-start; }
+.testata--pos-sotto.testata--menu-centro .navigazione ul { justify-content: center; }
+.testata--pos-sotto.testata--menu-centro .testata__marchio { align-items: center; text-align: center; }
+.testata--pos-sotto.testata--menu-destra .testata__marchio { align-items: flex-end; text-align: right; }
+
+/* Forma delle voci: pillole / sottolineato / semplice (default: «linee»). */
+.testata--forma-pillole .navigazione a {
+  border-bottom: 0; padding: 0.4rem 0.85rem; border-radius: 999px;
+  transition: background 0.12s, color 0.12s;
+}
+.testata--forma-pillole .navigazione a:hover { background: color-mix(in srgb, var(--accento) 12%, transparent); color: var(--inchiostro); }
+.testata--forma-pillole .navigazione a[aria-current="page"] { background: var(--accento); color: var(--carta); }
+.testata--forma-sottolineato .navigazione a { border-bottom: 2px solid var(--linea); }
+.testata--forma-sottolineato .navigazione a:hover,
+.testata--forma-sottolineato .navigazione a[aria-current="page"] { border-bottom-color: var(--accento); color: var(--inchiostro); }
+.testata--forma-semplice .navigazione a { border-bottom: 0; }
+.testata--forma-semplice .navigazione a:hover,
+.testata--forma-semplice .navigazione a[aria-current="page"] { color: var(--accento); }
+.navigazione ul {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: clamp(.9rem, 2.4vw, 1.9rem);
+}
+.navigazione a {
+  color: var(--inchiostro-2); text-decoration: none;
+  font-size: .96rem; padding-block: .35rem;
+  border-bottom: 2px solid transparent;
+}
+.navigazione a:hover { color: var(--inchiostro); border-bottom-color: var(--linea-forte); }
+.navigazione a[aria-current="page"] {
+  color: var(--inchiostro); border-bottom-color: var(--accento);
+}
+
+/* ───────────────────────────────────────────────────── apertura */
+.apertura { padding-block: clamp(3.5rem, 9vw, 7rem) var(--stacco); }
+.apertura h1 { margin-bottom: .5em; }
+.apertura .presentazione {
+  font-family: var(--serif); font-size: clamp(1.2rem, 2.3vw, 1.45rem);
+  line-height: 1.6; color: var(--inchiostro-2); max-width: 46ch;
+}
+.apertura .recapito {
+  margin-top: 2.2rem; padding-top: 1.4rem; border-top: 1px solid var(--linea);
+  font-size: .96rem; color: var(--tenue);
+}
+
+/* ──────────────────────────────────────────────────────── griglie */
+.griglia {
+  display: grid; gap: clamp(1.5rem, 3.5vw, 2.75rem);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+.griglia.due { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+/* La scheda di un'area: tutta cliccabile, senza sembrare un pulsante. */
+.scheda {
+  display: flex; flex-direction: column;
+  padding: 1.75rem; background: var(--carta-2);
+  border: 1px solid var(--linea); border-radius: 3px;
+  text-decoration: none; color: inherit;
+  transition: border-color .18s, transform .18s;
+}
+.scheda:hover { border-color: var(--linea-forte); transform: translateY(-2px); color: inherit; }
+.scheda h3 { margin-bottom: .5rem; }
+.scheda p { color: var(--inchiostro-2); font-size: .98rem; }
+.scheda .oltre {
+  margin-top: auto; padding-top: 1.1rem;
+  font-size: .88rem; font-weight: 600; color: var(--accento);
+  letter-spacing: .02em;
+}
+
+/* Le materie: un elenco, non delle etichette colorate. */
+.materie { list-style: none; margin: 1rem 0 0; padding: 0; }
+.materie li {
+  padding: .42rem 0 .42rem 1.1rem; position: relative;
+  border-top: 1px solid var(--linea); font-size: .96rem; color: var(--inchiostro-2);
+}
+.materie li::before {
+  content: "—"; position: absolute; left: 0; color: var(--accento);
+}
+
+/* ─────────────────────────────────────────────────────── articoli */
+.elenco-note { list-style: none; margin: 0; padding: 0; }
+.elenco-note li { border-top: 1px solid var(--linea); }
+.elenco-note li:last-child { border-bottom: 1px solid var(--linea); }
+.elenco-note a {
+  display: block; padding: 1.7rem 0; text-decoration: none; color: inherit;
+}
+.elenco-note a:hover { color: inherit; }
+.elenco-note a:hover h3 { color: var(--accento); }
+.elenco-note h3 { margin-bottom: .35rem; transition: color .16s; }
+.elenco-note p { color: var(--inchiostro-2); margin: 0; max-width: var(--misura); }
+
+.data {
+  display: block; font-size: .82rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--tenue); margin-bottom: .55rem;
+}
+
+/* Il corpo di un articolo o di un'area: la parte che si legge davvero. */
+.prosa { max-width: var(--misura); }
+.prosa > * + * { margin-top: 1.2em; }
+.prosa h2 { font-size: 1.5rem; margin-top: 2.4em; }
+.prosa h3 { font-size: 1.2rem; margin-top: 2em; }
+.prosa ul, .prosa ol { padding-left: 1.3rem; }
+.prosa li + li { margin-top: .45em; }
+.prosa blockquote {
+  margin-inline: 0; padding-left: 1.3rem;
+  border-left: 2px solid var(--accento); color: var(--inchiostro-2);
+  font-style: italic;
+}
+/* Le fotografie inserite dentro un testo dal pannello. Bordi, angoli e
+   respiro non si scelgono: chi le inserisce non deve pensarci, e non può
+   sbagliarli. Si sceglie soltanto DOVE stanno. */
+.prosa { display: flow-root; }   /* così il testo attorno non deborda in fondo */
+.prosa img {
+  width: 100%; height: auto; margin-block: 1.6rem;
+  border: 1px solid var(--linea); border-radius: 3px;
+}
+
+/* Le quattro posizioni che il pannello sa dare a una fotografia. Le stesse
+   quattro classi sono ripetute in public/admin/editor.css, perché mentre si
+   compone si deve vedere quello che verrà fuori qui. Cambiandone una sola si
+   ottiene un pannello che mostra il falso, e nessuno se ne accorge finché non
+   guarda il sito.
+   Non ci sono coordinate libere, e non è una mancanza: una fotografia messa a
+   mano a 340 px da sinistra, su un telefono, non è più dov'era — è addosso a
+   qualcos'altro. */
+.prosa img.img--sinistra { float: left;  width: 42%; margin: .4rem 1.5rem 1rem 0; }
+.prosa img.img--destra   { float: right; width: 42%; margin: .4rem 0 1rem 1.5rem; }
+.prosa img.img--centro   { display: block; width: 65%; margin: 1.6rem auto; }
+.prosa img.img--piena    { display: block; width: 100%; }
+
+/* Sotto i 620 px il testo attorno non ha più senso: resterebbe una colonna di
+   tre parole a fianco della fotografia. Tornano tutte a tutta larghezza. */
+@media (max-width: 620px) {
+  .prosa img.img--sinistra,
+  .prosa img.img--destra,
+  .prosa img.img--centro {
+    float: none; width: 100%; margin: 1.4rem 0;
+  }
+}
+
+/* ─────────────────────────────────────────── pagine composte a blocchi */
+
+/* La testata delle pagine composte dal pannello: al centro. Prima titolo e
+   sottotitolo stavano a sinistra sopra una composizione che vive in mezzo al
+   foglio, e sembravano avanzati da un'altra pagina. Solo qui: il resto del
+   sito ha la sua gabbia a sinistra, ed è disegnato così apposta. */
+.testata-composta { margin-inline: auto; text-align: center; }
+
+/* Il collegamento messo sul foglio: da pulsante, o da semplice riga. */
+.blocco-collegamento { margin: 0; }
+.blocco-collegamento .bottone {
+  display: inline-block;
+  padding: 0.55em 1.3em;
+  background: var(--accento, #2f4b7c);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 4px;
+}
+.blocco-collegamento .bottone:hover { filter: brightness(1.12); }
+
+/* ─────────────────────────────────────────────── le forme decorative */
+.blocco-forma { width: 100%; height: 100%; min-height: 12cqw; color: var(--tinta); }
+.griglia-blocchi .blocco-forma { min-height: 120px; }
+/* Sul foglio la cella è alta `--h` (min-height), ma `height: 100%` di un
+   genitore ad altezza automatica non si risolve: la forma restava a 12cqw
+   qualunque altezza le si desse. Prende l'altezza chiesta direttamente. */
+.foglio .blocco-forma { min-height: max(12cqw, calc(var(--h, 0) * 1cqw)); }
+.forma--cerchio { background: var(--riempi); border-radius: 50%; }
+.forma--banda { background: var(--riempi); border-radius: 8px; }
+
+/* Una sezione «vestita» — colore o carattere scelti dalla tavolozza — li
+   impone a TUTTO il suo testo, titoli e citazioni compresi. Senza questa
+   regola i titoli e le citazioni, che hanno un colore proprio, resterebbero
+   come prima: un vestito a metà, che chi l'ha scelto legge come un difetto.
+   Deve stare DOPO le regole di .prosa nel foglio: a parità di specificità
+   vince l'ultima. */
+[data-vestita] :is(h1, h2, h3, p, li, blockquote, figcaption) {
+  color: inherit;
+  font-family: inherit;
+}
+/* Le sezioni si succedono con un respiro fra loro: è ciò che tiene insieme
+   una pagina composta da qualcun altro, che non sa nulla di ritmo verticale
+   e non deve saperne niente. */
+.sezione > .contenitore + .contenitore { margin-top: 2.2rem; }
+
+/* LA GRIGLIA delle pagine composte: dodici colonne.
+   Dodici perché si divide per 2, 3, 4 e 6 — metà, un terzo, un quarto, due
+   terzi vengono tutti esatti, e sono le larghezze che si chiedono davvero.
+   Le sezioni si mettono una a fianco all'altra finché la riga si riempie, poi
+   vanno a capo da sole: nessuno deve pensare a quando cominciare una riga
+   nuova. */
+.griglia-blocchi {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 2.4rem 1.8rem;
+  align-items: start;
+}
+/* `min-width: 0` non è pignoleria: senza, una parola lunga o una fotografia
+   allargano la loro colonna oltre la propria quota e sfondano tutta la riga.
+   È il difetto classico di CSS grid, e si manifesta solo con certi contenuti
+   — cioè si scopre in produzione. */
+.griglia-blocchi > .cella {
+  grid-column: span var(--span, 12);
+  min-width: 0;
+  /* L'altezza è MINIMA, e per giunta limitata a una parte dello schermo.
+     Fissa, un testo cresciuto di due righe uscirebbe dal riquadro o verrebbe
+     tagliato — e succederebbe il giorno che qualcuno corregge una frase.
+     Il `min()` serve al telefono: un riquadro alto 700 px, deciso davanti a
+     uno schermo grande, su 640 px di telefono sarebbe una schermata intera di
+     niente prima del contenuto dopo. */
+  min-height: min(var(--alt, 0px), 70vh);
+}
+
+/* Sotto i 620 px la griglia non ha più senso: un terzo di 390 px sono 130,
+   cioè tre parole per riga. Tutto torna a tutta larghezza, e la pagina
+   composta su uno schermo grande resta leggibile su un telefono. */
+@media (max-width: 620px) {
+  .griglia-blocchi > .cella { grid-column: 1 / -1; }
+  .griglia-blocchi { gap: 2rem; }
+}
+
+/* ───────────────────────────── IL FOGLIO LIBERO ─────────────────────────
+ *
+ * Ogni cosa dove è stata messa: posizione e dimensione in percentuale della
+ * larghezza del foglio, e il foglio con un rapporto d'aspetto fisso. Nessun
+ * pixel, da nessuna parte — ed è tutto quello che serve perché la
+ * composizione si rimpicciolisca intera invece di sfasciarsi.
+ *
+ * `aspect-ratio: 100 / var(--rap)`: `--rap` è l'altezza in percentuale della
+ * larghezza. 70 vuol dire un foglio largo il doppio circa di quanto è alto.
+ *
+ * `container-type: inline-size` è il pezzo che tiene su il resto: rende `cqw`
+ * l'uno per cento della larghezza del foglio, e da lì il testo si misura in
+ * quella unità invece che in pixel. Senza, il testo resterebbe della sua
+ * dimensione mentre il riquadro si stringe, e uscirebbe fuori — cioè proprio
+ * il disastro che questa impaginazione deve evitare.
+ */
+.foglio {
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 100 / var(--rap, 70);
+  /* Quello che finisce oltre il bordo si vede lo stesso: tagliarlo
+     silenziosamente vorrebbe dire far sparire una sezione a chi l'ha
+     appena messa, senza dirglielo. */
+  overflow: visible;
+}
+
+.foglio > .cella {
+  position: absolute;
+  left: calc(var(--x, 4) * 1%);
+  top: calc(var(--y, 4) * 1%);
+  width: calc(var(--w, 40) * 1%);
+  /* `--h: 0` vuol dire «alta quanto il suo contenuto». Le percentuali di
+     altezza si misurano sull'altezza del foglio, non sulla larghezza: qui si
+     usa `cqw` perché una sezione alta «il 20» deve restare la stessa cosa
+     anche cambiando l'altezza del foglio. */
+  height: auto;
+  min-height: calc(var(--h, 0) * 1cqw);
+}
+
+/* Il testo dentro un foglio si misura in centesimi della larghezza. I valori
+   sono quelli del sito diviso una larghezza di riferimento di 1200 px: un
+   corpo da 18 px là fa 1.5cqw qui. */
+/* `--scala` (predefinito 1) è la grandezza del carattere scelta per la
+   sezione: si moltiplica sul corpo in cqw, così «più grande» resta più grande
+   anche quando il foglio si rimpicciolisce sul telefono. Vive sulla cella. */
+.foglio .prosa,
+.foglio .riga-misura,
+.foglio .blocco-citazione { font-size: calc(1.5cqw * var(--scala, 1)); max-width: none; }
+.foglio .blocco-titolo { font-size: calc(2.6cqw * var(--scala, 1)); }
+.foglio h3 { font-size: calc(1.8cqw * var(--scala, 1)); }
+.foglio figcaption { font-size: calc(1.2cqw * var(--scala, 1)); }
+.foglio .blocco-collegamento { font-size: calc(1.5cqw * var(--scala, 1)); }
+.foglio .prosa img { margin-block: 1.2cqw; }
+/* I pezzi con misure in rem che un testo porta sul foglio (titoli incollati,
+   l'elenco «materie»): in cqw anche loro, o restano grandi mentre il foglio
+   si rimpicciolisce. */
+.foglio .prosa h2 { font-size: calc(2.1cqw * var(--scala, 1)); }
+.foglio .prosa h3 { margin-top: 1.6em; margin-bottom: .4em; }
+.foglio .prosa h3:first-child { margin-top: 0; }
+.foglio .materie { margin-top: 0; }
+.foglio .materie li { font-size: 1em; }
+.foglio .blocco-collegamento .bottone { font-size: inherit; padding: .55em 1.3em; }
+
+/* Sul foglio anche IL TITOLO della pagina sta sul foglio, dove lo si è
+   messo: fuori, sopra una composizione che vive in mezzo, sembrava di
+   un'altra pagina — e soprattutto non si poteva spostare. Si misura in
+   centesimi della larghezza come tutto il resto. */
+.foglio h1 { font-size: calc(3.4cqw * var(--scala, 1)); margin: 0 0 0.4em; }
+.foglio .presentazione { font-size: calc(1.6cqw * var(--scala, 1)); margin: 0; }
+.foglio .testata-composta { margin-inline: 0; }
+
+/* Sul telefono NON si cambia niente, ed è voluto: il foglio si rimpicciolisce
+   in proporzione e la composizione resta quella. Il prezzo è che il testo
+   diventa piccolo — è il patto di questo modo, ed è scritto nella voce che lo
+   fa scegliere. Rimescolare le posizioni per far tornare i corpi vorrebbe
+   dire buttare via proprio la cosa per cui lo si è scelto. */
+
+.blocco-titolo { font-size: clamp(1.4rem, 2.8vw, 1.85rem); margin-bottom: .5em; }
+
+.blocco-figura { margin: 0; }
+.blocco-figura img {
+  width: 100%; border-radius: 3px; border: 1px solid var(--linea);
+}
+.blocco-figura figcaption,
+.blocco-citazione figcaption {
+  margin-top: .7rem; font-size: .92rem; color: var(--tenue);
+}
+
+/* Immagine e testo affiancati. Su schermo stretto tornano in colonna, con
+   l'immagine sopra: è l'ordine in cui stanno nel markup, e resta quello anche
+   quando `rovesciato` li scambia a video. */
+.blocco-affiancato { display: grid; gap: clamp(1.2rem, 3vw, 2.4rem); align-items: start; }
+.blocco-affiancato img {
+  width: 100%; border-radius: 3px; border: 1px solid var(--linea);
+}
+@media (min-width: 760px) {
+  .blocco-affiancato { grid-template-columns: 1fr 1fr; }
+  .blocco-affiancato.rovesciato img { order: 2; }
+}
+
+.blocco-citazione {
+  margin: 0; max-width: var(--misura);
+  padding-left: 1.4rem; border-left: 3px solid var(--accento);
+}
+.blocco-citazione blockquote {
+  margin: 0; font-family: var(--serif); font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+  line-height: 1.55; color: var(--inchiostro-2);
+}
+
+.blocco-separatore {
+  border: none; border-top: 1px solid var(--linea);
+  max-width: var(--misura); margin: 1rem 0;
+}
+
+/* ──────────────────────────────────────────────────────── persone */
+.persona { display: grid; gap: 1.6rem; grid-template-columns: 1fr; }
+@media (min-width: 720px) {
+  .persona { grid-template-columns: 200px 1fr; gap: 2.4rem; }
+}
+.persona + .persona { margin-top: var(--stacco); padding-top: var(--stacco); border-top: 1px solid var(--linea); }
+.persona .ritratto {
+  aspect-ratio: 3 / 4; width: 100%; object-fit: cover;
+  background: var(--carta-2); border: 1px solid var(--linea); border-radius: 2px;
+}
+.persona .ruolo { color: var(--accento); font-size: .92rem; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; margin: 0 0 .8rem; }
+.persona .albo { font-size: .92rem; color: var(--tenue); margin-top: 1rem; }
+
+/* ─────────────────────────────────────────────────────── recapiti */
+.recapiti { margin: 0; padding: 0; }
+.recapiti > div { padding: 1rem 0; border-bottom: 1px solid var(--linea); }
+.recapiti dt {
+  font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--tenue); margin-bottom: .25rem;
+}
+.recapiti dd { margin: 0; font-size: 1.06rem; }
+.recapiti dd a { text-decoration: none; }
+.recapiti dd a:hover { text-decoration: underline; }
+
+/* ─────────────────────────────────────────────────────── piè di pagina */
+.piede {
+  background: var(--carta-scura); color: #c3ccd8;
+  padding-block: var(--stacco) 2.5rem; margin-top: var(--stacco);
+  font-size: .94rem;
+}
+.piede a { color: var(--su-scuro); text-decoration: none; }
+.piede a:hover { text-decoration: underline; }
+.piede h2 {
+  font-size: 1.05rem; color: var(--carta); font-family: var(--sans);
+  font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.piede .colonne {
+  display: grid; gap: 2.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+.piede ul { list-style: none; margin: 0; padding: 0; }
+.piede li + li { margin-top: .5rem; }
+.piede address { font-style: normal; }
+/* Il piè scritto dall'editor arriva dentro una `.prosa`: qui non è una
+   colonna di lettura, è tutta la larghezza. */
+.piede .prosa { max-width: none; }
+.piede .colonne > div > * + * { margin-top: 0; }
+
+/* La clausola: non è una nota a piè di pagina qualunque, è quella che
+   dice che il sito non è consulenza. Deve restare leggibile — un grigio
+   troppo tenue la trasformerebbe nella riga che nessuno legge. */
+.clausola {
+  margin-top: var(--stacco); padding-top: 1.8rem;
+  border-top: 1px solid rgba(255, 255, 255, .14);
+  color: #9fabbb; font-size: .88rem; line-height: 1.65;
+  max-width: 78ch;
+}
+.clausola + .clausola { margin-top: 1.2rem; padding-top: 0; border-top: none; }
+
+/* ───────────────────────────────────────────────────────── varie */
+.bottone {
+  display: inline-block; padding: .85rem 1.7rem;
+  background: var(--inchiostro); color: var(--carta);
+  text-decoration: none; border-radius: 3px; font-size: .98rem; font-weight: 500;
+  transition: background .18s;
+}
+.bottone:hover { background: var(--accento); color: var(--carta); }
+
+.vuoto { color: var(--tenue); font-style: italic; }
+
+/* Pagina 404 e simili: tutto in mezzo, verticalmente. */
+.centrata {
+  min-height: 52vh; display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: center;
+}
+
+@media print {
+  .testata, .piede, .salta { display: none; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  a { color: #000; }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Testata e menu dell'EDITOR DI SITI (generici, guidati dall'albero delle
+   pagine). Autonomi: non dipendono dal markup del motore d'origine. */
+.testata__riga {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap;
+}
+.testata__marchio { display: flex; flex-direction: column; gap: 0.1rem; }
+.testata__nome {
+  font-family: var(--serif, Georgia, serif);
+  font-size: 1.15rem; font-weight: 600; color: var(--inchiostro, #17222a);
+  text-decoration: none; white-space: nowrap;
+}
+.testata__sottotitolo {
+  font-size: 0.82rem; color: var(--tenue, #6f7b8c); letter-spacing: 0.01em;
+}
+.navigazione .menu {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap;
+}
+/* Le sottopagine: per M1 un elenco annidato semplice, sotto la voce padre.
+   Il tema e i menu a tendina veri arrivano in M2. */
+.navigazione .menu--sotto {
+  gap: 0.8rem; margin-left: 0.8rem; font-size: 0.9em;
+}
+.navigazione .menu li { display: flex; align-items: baseline; gap: 0.6rem; }
+
+/* ─────────────────────────────────────────────── il modulo di contatto */
+.modulo-contatto { max-width: 34rem; }
+.modulo__titolo { font-family: var(--serif, Georgia, serif); font-size: 1.6rem; margin: 0 0 .5rem; }
+.modulo__intro { margin-bottom: 1.2rem; }
+.modulo__form { display: flex; flex-direction: column; gap: .9rem; }
+.modulo__campo { display: flex; flex-direction: column; gap: .3rem; font-size: .95rem; }
+.modulo__campo input,
+.modulo__campo textarea {
+  font: inherit; padding: .6rem .7rem; border: 1px solid var(--linea-forte, #cfc6b7);
+  border-radius: 6px; background: var(--carta, #fff); color: var(--inchiostro, #17202e);
+}
+.modulo__campo textarea { resize: vertical; }
+.modulo__form .bottone { align-self: flex-start; cursor: pointer; border: 0; }
+/* L'esca anti-spam: fuori dallo schermo, mai visibile a una persona. */
+.modulo__esca { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.modulo__errore {
+  margin: 0; padding: .6rem .8rem; border-radius: 6px;
+  background: #fbeaea; color: #7a2f2f; border: 1px solid #e3bcbc; font-size: .9rem;
+}
+.modulo__grazie {
+  padding: 1rem 1.2rem; border-radius: 8px;
+  background: color-mix(in srgb, var(--accento, #1f6b4a) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accento, #1f6b4a) 35%, transparent);
+  font-size: 1.02rem;
+}
+
+/* ─────────────────────────── effetti d'ingresso (allo scorrimento)
+   Senza JavaScript non c'è la classe `.js` e i contenuti restano visibili:
+   miglioramento progressivo. Con JS, le sezioni con `data-anima` compaiono
+   quando entrano nello schermo (script in Base.astro). */
+.js [data-anima] { opacity: 0; }
+.js [data-anima].visibile { opacity: 1; }
+.js [data-anima="sali"] { transform: translateY(26px); transition: opacity .7s ease, transform .7s ease; }
+.js [data-anima="sali"].visibile { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js [data-anima] { opacity: 1 !important; transform: none !important; clip-path: none !important; transition: none !important; }
+}
+
+/* Il passaggio fra le pagine: dissolvenza incrociata del browser (anche dalla porta della home). */
+@view-transition { navigation: auto; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Le finiture dello Studio Legale G.D.D.: lo stesso linguaggio
+   dell'anticamera (src/pages/index.astro) sulle pagine interne. Fondo
+   antracite e colori vengono dal tema; qui stanno le forme: pesi dei
+   caratteri, testata e menu in maiuscoletto, pulsanti rossi, il filo rosso
+   sopra i titoli, piè e modulo.
+   ═══════════════════════════════════════════════════════════════════ */
+body { font-weight: 300; }
+h1, h2, h3, .blocco-titolo { font-weight: 400; letter-spacing: 0; color: #fff; }
+strong { font-weight: 500; color: #fff; }
+a { color: var(--accento-viva); }
+a:hover { color: #fff; }
+
+/* La testata: il nome in Times, il sottotitolo come l'occhiello della soglia. */
+.testata { background: rgba(20, 22, 25, .55); border-bottom: 1px solid var(--linea); }
+.testata__nome { font-family: var(--serif); font-weight: 400; font-size: 1.35rem; color: #fff; letter-spacing: .02em; }
+.testata__nome:hover { color: #fff; }
+.testata__sottotitolo {
+  font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--accento-viva); font-weight: 500;
+}
+.navigazione a {
+  font-size: .74rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; color: var(--tenue);
+}
+.navigazione a:hover { color: #fff; border-bottom-color: var(--linea-forte); }
+.navigazione a[aria-current="page"] { color: #fff; border-bottom-color: var(--accento-viva); }
+
+/* Il titolo della pagina sul foglio: un filo rosso sopra, come la soglia. */
+.foglio .testata-composta::before {
+  content: ""; display: block; width: 2.6rem; height: 1px; background: var(--accento-viva); margin-bottom: 1.6cqw;
+}
+.foglio .presentazione { color: var(--tenue); }
+
+/* I pulsanti: quelli di «Accedi allo studio». */
+.bottone, .blocco-collegamento .bottone {
+  background: var(--accento); color: #fff; border-radius: 2px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: .14em;
+  box-shadow: 0 14px 32px -16px rgba(200, 16, 26, .85);
+  transition: background .25s, transform .25s, box-shadow .25s;
+}
+.bottone:hover, .blocco-collegamento .bottone:hover {
+  background: var(--accento-viva); color: #fff; filter: none; transform: translateY(-2px);
+}
+.foglio .blocco-collegamento .bottone { font-size: .82em; padding: 1em 1.9em; }
+button.bottone { border: 0; cursor: pointer; font: inherit; font-weight: 500; }
+
+/* Elenchi, citazioni, separatori, figure. */
+.materie li { border-top-color: var(--linea); color: var(--inchiostro-2); }
+.materie li::before { color: var(--accento-viva); }
+.blocco-citazione { border-left-color: var(--accento); }
+.blocco-citazione blockquote { font-style: italic; color: #fff; }
+.blocco-figura img, .blocco-affiancato img { border-color: transparent; border-radius: 0; }
+
+/* Il modulo di contatto, sul fondo scuro. */
+.modulo__titolo { font-weight: 400; color: #fff; }
+.modulo__campo { color: var(--tenue); font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; }
+.modulo__campo input, .modulo__campo textarea {
+  background: var(--carta-2); border: 1px solid var(--linea-forte); border-radius: 2px;
+  color: var(--inchiostro); font-size: 1rem; letter-spacing: 0; text-transform: none;
+}
+.modulo__campo input:focus, .modulo__campo textarea:focus { outline: none; border-color: var(--accento-viva); }
+
+/* Il piè: più scuro del fondo, titoletti rossi in maiuscoletto. */
+.piede { background: var(--carta-scura); color: var(--tenue); border-top: 1px solid var(--linea); }
+.piede h2 { color: var(--accento-viva); font-size: .74rem; letter-spacing: .28em; font-weight: 500; }
+.piede strong { color: var(--inchiostro); }
+.piede a { color: var(--inchiostro); }
+.piede a:hover { color: var(--accento-viva); text-decoration: none; }
+.clausola { color: #8d9197; border-top-color: var(--linea); }
+
+/* Le sezioni salgono allo scorrimento, come nell'anticamera (script in
+   Base.astro; senza JavaScript restano visibili). */
+.js [data-anima="sali"] { transform: translateY(14px); transition: opacity .8s cubic-bezier(.2, .7, .2, 1), transform .8s cubic-bezier(.2, .7, .2, 1); }
+
+/* Dalla porta alla pagina interna: la dissolvenza un po' più lunga. */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .6s; }
+
+/* Il fondo: la sfumatura del tema con il bagliore rosso della soglia in alto
+   a destra e una luce tenue a sinistra, più in basso. */
+body {
+  background:
+    radial-gradient(ellipse 55% 38% at 88% 0%, rgba(200, 16, 26, .11), transparent 70%),
+    radial-gradient(ellipse 45% 30% at 0% 55%, rgba(255, 255, 255, .025), transparent 70%),
+    var(--sfondo, var(--carta));
+}
+
+/* Le fotografie: niente cornice chiara, un'ombra profonda e il filo rosso
+   sfalsato dietro, come la porta. */
+.foglio .blocco-figura { position: relative; }
+.foglio .blocco-figura::after {
+  content: ""; position: absolute; inset: 1.3cqw -1.3cqw -1.3cqw 1.3cqw;
+  border: 1px solid rgba(200, 16, 26, .55); z-index: -1; pointer-events: none;
+}
+.foglio .blocco-figura img {
+  box-shadow: 0 2.4cqw 4cqw -2cqw rgba(0, 0, 0, .85);
+  filter: saturate(.92) contrast(1.04);
+}
+
+/* I sottotitoli dentro i testi diventano occhielli: maiuscoletto rosso. */
+.foglio .prosa h3 {
+  font-family: var(--sans); font-weight: 500; color: var(--accento-viva);
+  font-size: calc(.95cqw * var(--scala, 1)); letter-spacing: .26em; text-transform: uppercase;
+  margin-bottom: .9em;
+}
+/* …tranne i titoli delle schede delle aree, che restano in Times. */
+.foglio .prosa h3:has(a) {
+  font-family: var(--serif); font-weight: 400; color: #fff; letter-spacing: 0; text-transform: none;
+  font-size: calc(1.9cqw * var(--scala, 1)); margin-bottom: .5em;
+}
+.foglio .prosa h3 a { color: #fff; text-decoration: none; }
+.foglio .prosa h3 a:hover { color: var(--accento-viva); }
+.foglio .prosa:has(> h3:first-child a) { border-top: 1px solid var(--linea); padding-top: 1.6cqw; }
+/* Il ruolo sotto il nome di una persona (un paragrafo tutto in grassetto). */
+.foglio .prosa > p:first-child > strong:only-child {
+  font-weight: 500; color: var(--accento-viva); font-size: .78em; letter-spacing: .24em; text-transform: uppercase;
+}
+.foglio .blocco-titolo { font-size: calc(2.9cqw * var(--scala, 1)); }
+.foglio h1 { font-size: calc(4.4cqw * var(--scala, 1)); font-weight: 400; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   La barra, il sipario, la fascia finale e il piè (Base.astro).
+   ═══════════════════════════════════════════════════════════════════ */
+.barra {
+  position: sticky; top: 0; z-index: 55;
+  display: flex; align-items: center; gap: clamp(1rem, 3vw, 3rem);
+  padding: 1.1rem clamp(1.25rem, 5vw, 4.5rem);
+  /* Sempre la stessa: il colore di cima della pagina, pieno. Niente
+     sfocature (pesano sullo scorrimento) e niente cambi di misura. */
+  background: #24272b; border-bottom: 1px solid var(--linea);
+}
+.barra__marchio { display: flex; align-items: center; gap: .9rem; text-decoration: none; color: #fff; }
+.barra__marchio:hover { color: #fff; }
+.barra__sigla { font-family: var(--serif); font-size: 1.7rem; line-height: 1; letter-spacing: .02em; }
+.barra__sigla i, .piede__sigla i { font-style: normal; color: var(--accento-viva); }
+.barra__studio {
+  display: flex; flex-direction: column; gap: .25rem; padding-left: .9rem; border-left: 1px solid var(--linea-forte);
+  font-size: .66rem; letter-spacing: .26em; text-transform: uppercase; color: var(--inchiostro-2); font-weight: 500;
+}
+.barra__studio em { font-style: normal; color: var(--accento-viva); }
+.barra__voci { display: flex; gap: clamp(1rem, 1.8vw, 2rem); margin-left: auto; }
+.barra__voci a {
+  position: relative; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500;
+  color: var(--tenue); text-decoration: none; padding-block: .4rem;
+}
+.barra__voci a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--accento-viva);
+  transform: scaleX(0); transform-origin: right; transition: transform .45s cubic-bezier(.6, 0, .2, 1);
+}
+.barra__voci a:hover, .barra__voci a[aria-current="page"] { color: #fff; }
+.barra__voci a:hover::after, .barra__voci a[aria-current="page"]::after { transform: scaleX(1); transform-origin: left; }
+.barra__destra { display: flex; align-items: center; gap: 1.4rem; }
+/* Il selettore di lingua IT | EN: due tasti affiancati, la lingua attiva
+   piena nel rosso dell'accento. Lo usa anche l'anticamera (.lingue--soglia). */
+.lingue { display: inline-flex; border: 1px solid var(--linea-forte); border-radius: 2px; overflow: hidden; flex: none; }
+.lingue a {
+  font-size: .66rem; letter-spacing: .16em; font-weight: 600; text-decoration: none; line-height: 1;
+  color: var(--tenue); padding: .5rem .62rem; transition: color .2s, background .2s;
+}
+.lingue a + a { border-left: 1px solid var(--linea-forte); }
+.lingue a:hover { color: #fff; }
+.lingue a[aria-current="true"] { background: var(--accento); color: #fff; }
+.barra__invito {
+  font-size: .7rem; letter-spacing: .18em; text-transform: uppercase; font-weight: 500; text-decoration: none;
+  color: #fff; padding: .75rem 1.2rem; border: 1px solid var(--accento); border-radius: 2px;
+  transition: background .25s;
+}
+.barra__invito:hover { background: var(--accento); color: #fff; }
+.barra__menu {
+  display: flex; align-items: center; gap: .8rem; background: none; border: 0; cursor: pointer; padding: .4rem 0;
+  font: inherit; font-size: .72rem; letter-spacing: .2em; text-transform: uppercase; font-weight: 500; color: #fff;
+}
+.barra__menu-linee { position: relative; width: 1.7rem; height: .7rem; }
+.barra__menu-linee i { position: absolute; left: 0; right: 0; height: 1px; background: currentColor; transition: transform .45s, top .45s, background .3s; }
+.barra__menu-linee i:first-child { top: 0; }
+.barra__menu-linee i:last-child { top: 100%; }
+.sipario-aperto .barra__menu-linee i { background: var(--accento-viva); }
+.sipario-aperto .barra__menu-linee i:first-child { top: 50%; transform: rotate(45deg); }
+.sipario-aperto .barra__menu-linee i:last-child { top: 50%; transform: rotate(-45deg); }
+/* Con il menu aperto la barra resta piena, sopra il sipario: le voci che
+   scorrono le passano sotto invece di mescolarsi al logo. */
+.sipario-aperto .barra { background: #1d2024; border-bottom-color: var(--linea); }
+.sipario-aperto .barra__voci, .sipario-aperto .barra__invito { visibility: hidden; }
+
+/* Il sipario si apre a cerchio dal pulsante, le voci salgono una per una. */
+.sipario {
+  position: fixed; inset: 0; z-index: 50; overflow-y: auto; overscroll-behavior: contain;
+  height: 100vh; height: 100dvh;
+  display: grid; grid-template-columns: 1.4fr .6fr; align-items: center; gap: 4rem;
+  /* In fondo abbastanza spazio perché l'ultima voce non finisca sotto le
+     barre del browser (sul telefono) o sotto la barra di scorrimento. */
+  padding: 8rem clamp(1.25rem, 8vw, 8rem) calc(6rem + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(ellipse 50% 60% at 85% 20%, rgba(200, 16, 26, .16), transparent 70%),
+    linear-gradient(160deg, #1d2024, #272a2f);
+  clip-path: circle(0% at calc(100% - 4rem) 3rem);
+  transition: clip-path .75s cubic-bezier(.7, 0, .2, 1);
+}
+.sipario-aperto .sipario { clip-path: circle(150% at calc(100% - 4rem) 3rem); }
+.sipario-aperto body { overflow: hidden; }
+.sipario__voci ol { list-style: none; margin: 0; padding: 0; }
+.sipario__voci li { overflow: hidden; border-bottom: 1px solid var(--linea); }
+.sipario__voci a {
+  display: flex; align-items: baseline; gap: 1.6rem; padding: .9rem 0; text-decoration: none; color: #fff;
+  font-family: var(--serif); font-size: clamp(2rem, 5vw, 3.8rem); line-height: 1.1;
+  transform: translateY(110%); transition: transform .8s cubic-bezier(.2, .7, .2, 1) calc(.25s + var(--i) * .07s), color .3s, padding-left .4s;
+}
+.sipario-aperto .sipario__voci a { transform: none; }
+.sipario__voci a:hover, .sipario__voci a[aria-current="page"] { color: var(--accento-viva); padding-left: 1rem; }
+.sipario__num { font-family: var(--sans); font-size: .8rem; letter-spacing: .2em; color: var(--accento-viva); min-width: 2rem; }
+.sipario__recapiti { color: var(--inchiostro-2); font-size: .98rem; opacity: 0; transform: translateY(20px); transition: opacity .6s .6s, transform .6s .6s; }
+.sipario-aperto .sipario__recapiti { opacity: 1; transform: none; }
+.sipario__recapiti p { margin: 0 0 1.4rem; }
+.sipario__recapiti a { color: #fff; text-decoration: none; }
+.sipario__recapiti a:hover { color: var(--accento-viva); }
+.sipario__recapiti .sipario__etichetta { font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--accento-viva); margin-bottom: .5rem; font-weight: 500; }
+
+
+/* La fascia finale: l'invito all'appuntamento prima del piè. */
+.invito-finale {
+  text-align: center; padding: clamp(5rem, 11vw, 9rem) 1.25rem;
+  background: radial-gradient(ellipse 45% 70% at 50% 100%, rgba(200, 16, 26, .15), transparent 70%);
+  border-top: 1px solid var(--linea);
+}
+.invito-finale__etichetta { font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; color: var(--accento-viva); font-weight: 500; margin-bottom: 1.4rem; }
+.invito-finale__frase { font-family: var(--serif); font-style: italic; font-size: clamp(2rem, 4.5vw, 3.6rem); line-height: 1.12; color: #fff; margin: 0 auto 2.6rem; max-width: 14em; text-wrap: balance; }
+.invito-finale .bottone { padding: 1.3rem 2.6rem; }
+
+/* Il piè: la sigla grande. */
+.piede { margin-top: 0; }
+.piede__capo {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; flex-wrap: wrap;
+  padding-bottom: 2.6rem; margin-bottom: 3rem; border-bottom: 1px solid var(--linea);
+}
+.piede__sigla { font-family: var(--serif); font-size: clamp(3.5rem, 9vw, 7rem); line-height: .9; color: #fff; }
+
+@media (max-width: 960px) {
+  .barra__invito { display: none; }
+  .barra__destra { margin-left: auto; }
+  .barra__studio { display: none; }
+  .sipario { grid-template-columns: 1fr; align-items: start; padding-top: 7rem; gap: 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sipario, .sipario__voci a, .sipario__recapiti { transition: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Le pagine disegnate a mano (Lo studio, Aree, Contatti): i pezzi comuni.
+   ═══════════════════════════════════════════════════════════════════ */
+.pag { padding-inline: clamp(1.25rem, 6vw, 6rem); }
+.pag > * { max-width: 76rem; margin-inline: auto; }
+.pag-occhio {
+  display: flex; align-items: center; gap: .9rem; margin: 0 0 1.4rem;
+  font-size: .72rem; letter-spacing: .28em; text-transform: uppercase; font-weight: 500; color: var(--accento-viva);
+}
+.pag-occhio::before { content: ""; width: 2.6rem; height: 1px; background: currentColor; }
+.pag-apertura { padding-block: clamp(3.5rem, 9vw, 7.5rem) clamp(3rem, 7vw, 5.5rem); }
+.pag-apertura h1 { font-size: clamp(2.8rem, 7vw, 6rem); line-height: 1; margin: 0 0 2rem; max-width: 16ch; }
+.pag-apertura h1 em { color: var(--accento-viva); font-style: italic; }
+.pag-lead { font-family: var(--serif); font-size: clamp(1.25rem, 2.3vw, 1.75rem); line-height: 1.45; color: var(--inchiostro-2); max-width: 44rem; margin: 0; }
+.pag-sezione { padding-block: clamp(4rem, 9vw, 7rem); border-top: 1px solid var(--linea); }
+.pag-sezione > h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin-bottom: 2.6rem; }
+.pag-due { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2rem, 6vw, 5.5rem); }
+.pag-due p { color: var(--inchiostro-2); font-size: 1.06rem; line-height: 1.8; }
+.pag-etichetta { font-size: .7rem; letter-spacing: .26em; text-transform: uppercase; font-weight: 500; color: var(--accento-viva); margin: 0 0 .8rem; }
+/* Le pastiglie: le materie, i modi di ricevere. */
+.pastiglie { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.pastiglie li { font-size: .82rem; padding: .45rem .9rem; border: 1px solid var(--linea-forte); border-radius: 999px; color: var(--inchiostro-2); }
+/* Una foto con il filo rosso sfalsato dietro. */
+.incorniciata { position: relative; margin: 0; }
+.incorniciata::after { content: ""; position: absolute; inset: 1.4rem -1.4rem -1.4rem 1.4rem; border: 1px solid rgba(200, 16, 26, .6); z-index: -1; }
+.incorniciata img { width: 100%; display: block; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .9); }
+.pag :is(section, header) { position: relative; z-index: 0; }
+@media (max-width: 820px) {
+  .pag-due { grid-template-columns: 1fr; }
+}
+
+/* Sei voci nella barra: mai a capo. Sotto una certa larghezza si toglie
+   prima la scritta accanto alla sigla, poi le voci (restano nel Menu). */
+.barra__voci a, .barra__studio, .barra__invito { white-space: nowrap; }
+/* Le voci restano SEMPRE visibili su computer: quando lo spazio si stringe
+   cede prima la scritta accanto alla sigla, poi il pulsante Appuntamento
+   (c'è già Contatti), e le voci si fanno più fitte. Solo sotto i 1000 px
+   (tablet e telefono) restano Menu e il sipario. Le soglie tengono conto
+   della barra di scorrimento di Windows. */
+@media (max-width: 1760px) { .barra__studio { display: none; } }
+@media (max-width: 1480px) { .barra__invito { display: none; } }
+@media (max-width: 1300px) {
+  .barra { gap: 1.4rem; }
+  .barra__voci { gap: 1.1rem; }
+  .barra__voci a { font-size: .68rem; letter-spacing: .14em; }
+}
+@media (max-width: 1000px) {
+  .barra__voci { display: none; }
+  .barra__destra { margin-left: auto; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   Il telefono (fino a 760 px): pagine più corte e niente che esca dallo
+   schermo. Il computer non cambia.
+   ═══════════════════════════════════════════════════════════════════ */
+/* Niente sporge oltre il bordo (le cornici rosse sfalsate lo facevano, e il
+   telefono allargava la pagina tagliando i testi). «clip» non crea una
+   barra di scorrimento e non rompe la barra fissa in alto. */
+html, body { overflow-x: clip; }
+
+/* «Continua a leggere»: l'inizio del testo, sfumato, e il pulsante. */
+.riassunto {
+  max-height: 14rem; overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000 55%, transparent);
+  mask-image: linear-gradient(#000 55%, transparent);
+}
+.riassunto.aperto { max-height: none; -webkit-mask-image: none; mask-image: none; }
+.riassumi__bottone {
+  display: inline-flex; align-items: center; gap: .6rem; margin: .8rem 0 0; padding: .7rem 0;
+  background: none; border: 0; border-bottom: 1px solid var(--accento); cursor: pointer;
+  font: inherit; font-size: .72rem; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #fff;
+}
+.riassumi__bottone { grid-column: 1 / -1; justify-self: start; white-space: nowrap; }
+.riassumi__bottone::after { content: "↓"; color: var(--accento-viva); }
+.riassumi__bottone[aria-expanded="true"]::after { content: "↑"; }
+
+@media (max-width: 760px) {
+  .incorniciata::after { inset: .7rem -.5rem -.5rem .7rem; }
+  .pag-apertura { padding-block: 2.4rem 2.2rem; }
+  .pag-apertura h1 { font-size: clamp(2.2rem, 10vw, 2.8rem); margin-bottom: 1.2rem; }
+  .pag-lead { font-size: 1.12rem; }
+  .pag-sezione { padding-block: 2.8rem; }
+  .pag-sezione > h2 { margin-bottom: 1.6rem; }
+  .pag-due { gap: 1.8rem; }
+  .pag-due p { font-size: 1rem; line-height: 1.7; }
+  .invito-finale { padding-block: 3.6rem; }
+  .invito-finale__frase { font-size: 1.9rem; margin-bottom: 1.8rem; }
+  .piede { padding-top: 2.8rem; }
+  .piede__capo { padding-bottom: 1.6rem; margin-bottom: 2rem; }
+  .piede__sigla { font-size: 3rem; }
+  .piede .colonne { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.6rem 1.2rem; }
+  .piede .colonne p { overflow-wrap: anywhere; }
+  .clausola { margin-top: 2.4rem; font-size: .8rem; }
+  /* Le sequenze diventano un carosello da scorrere di lato. */
+  .carosello-tel {
+    display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory; gap: 0;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .carosello-tel::-webkit-scrollbar { display: none; }
+  .carosello-tel > * { flex: 0 0 82%; scroll-snap-align: start; }
+}

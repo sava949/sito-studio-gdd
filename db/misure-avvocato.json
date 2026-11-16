@@ -1,0 +1,25 @@
+{
+  "/": null,
+  "/tommaso-novelli": null,
+  "/primo-colloquio": null,
+  "/domande-frequenti": null,
+  "/studio": null,
+  "/aree": null,
+  "/aree/diritto-penale": null,
+  "/aree/diritto-civile-e-impresa": null,
+  "/aree/famiglia-persone-e-minori": null,
+  "/aree/responsabilita-e-risarcimento": null,
+  "/contatti": null,
+  "/note-legali": {
+    "testata": 8.65,
+    "blocchi": [
+      146.5
+    ]
+  },
+  "/privacy": {
+    "testata": 11.37,
+    "blocchi": [
+      159.99
+    ]
+  }
+}
